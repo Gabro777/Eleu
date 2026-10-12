@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Installer di Eleu (WiX 5). Installa per l'utente che lo apre, senza chiedere i permessi di amministratore,
+  in %LOCALAPPDATA%\Programs\Eleu: la voce nel menu Start, l'icona tra le app installate e Eleu nell'elenco
+  "Apri con" dei suoi formati, senza cambiare i programmi predefiniti.
+  Si costruisce con build-installer.ps1, che prepara la cartella da installare (Publish).
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Eleu" Manufacturer="Gabriele Cusimano" Version="$(Versione)" UpgradeCode="6B0E8F7A-3C1D-4E52-9A6F-2D7B4C8E1F90"
+           Scope="perUser" Language="1040" Codepage="1252">
+    <SummaryInformation Description="Eleu, programma di scrittura accessibile" Manufacturer="Gabriele Cusimano" />
+    <MajorUpgrade DowngradeErrorMessage="È già installata una versione più recente di Eleu." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="Eleu.ico" SourceFile="$(sys.SOURCEFILEDIR)..\src\Eleu\Eleu.ico" />
+    <Property Id="ARPPRODUCTICON" Value="Eleu.ico" />
+    <Property Id="ARPCOMMENTS" Value="Programma di scrittura accessibile per persone cieche e ipovedenti" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="Programmi" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Eleu" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Eleu" Title="Eleu">
+      <Files Directory="INSTALLFOLDER" Include="!(bindpath.Publish)\**" />
+
+      <Component Id="CollegamentiEApriCon" Directory="INSTALLFOLDER" Guid="5A1C9E3B-7D24-4F8A-B6E0-1C3D5F7A9B2E">
+        <Shortcut Id="MenuStart" Directory="ProgramMenuFolder" Name="Eleu" Target="[INSTALLFOLDER]Eleu.exe"
+                  WorkingDirectory="INSTALLFOLDER" Description="Programma di scrittura accessibile" Icon="Eleu.ico" />
+        <RegistryValue Root="HKCU" Key="Software\Eleu" Name="Installato" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="RimuoviCartella" Directory="INSTALLFOLDER" On="uninstall" />
+        <RemoveFolder Id="RimuoviProgrammi" Directory="Programmi" On="uninstall" />
+
+        <!-- Eleu in "Apri con" per i suoi formati, senza diventare il programma predefinito. -->
+        <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento" Value="Documento aperto con Eleu" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento\DefaultIcon" Value="[INSTALLFOLDER]Eleu.exe,0" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento\shell\open\command" Value="&quot;[INSTALLFOLDER]Eleu.exe&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\Eleu.exe" Name="FriendlyAppName" Value="Eleu" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\Applications\Eleu.exe\shell\open\command" Value="&quot;[INSTALLFOLDER]Eleu.exe&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.docx\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.odt\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.rtf\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.txt\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.htm\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.html\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.epub\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+        <RegistryValue Root="HKCU" Key="Software\Classes\.pdf\OpenWithProgids" Name="Eleu.Documento" Value="" Type="string" />
+      </Component>
+    </Feature>
+  </Package>
+</Wix>

@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>Eleu.ico</ApplicationIcon>
+    <Version>1.1.2</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>Eleu</Product>
+    <Description>Programma di scrittura accessibile per persone cieche e ipovedenti</Description>
+    <Copyright>Copyright © 2026 Gabriele Cusimano. Licenza GNU GPL 3.0 o successiva.</Copyright>
+    <Authors>Gabriele Cusimano</Authors>
+    <Company>Gabriele Cusimano</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.13.0" />
+    <PackageReference Include="NAudio" Version="3.1.0" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="System.Speech" Version="10.0.12" />
+  </ItemGroup>
+
+  <!-- liblouis (traduzione Braille, LGPL): la DLL accanto all'eseguibile, le tabelle in liblouis\tables. -->
+  <ItemGroup>
+    <None Include="liblouis\liblouis.dll" Link="liblouis.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="liblouis\tables\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="liblouis\COPYING.LESSER;liblouis\LEGGIMI.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- La licenza (GPL 3) accanto all'eseguibile, come chiede la licenza stessa. -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- La guida utente (Aiuto > Guida di Eleu) accanto all'eseguibile. -->
+  <ItemGroup>
+    <None Include="Guida\*.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

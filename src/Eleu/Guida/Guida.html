@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Guida di Eleu</title>
+<meta name="author" content="Eleu">
+</head>
+<body>
+<h1>Guida di Eleu</h1>
+<p>Eleu è un programma di scrittura pensato per chi non vede e per chi vede poco. Ogni comando si raggiunge dalla tastiera, Eleu dice sempre cosa ha fatto e funziona con gli screen reader (NVDA, JAWS, Assistente vocale).</p>
+<p>Questa guida è un documento di Eleu: si legge con le frecce, si passa da un titolo all'altro con Inserisci, Titoli, Titolo successivo, e la si può far leggere alla voce con F11. Ctrl+F4 la chiude.</p>
+
+<h2>Primi passi</h2>
+<p>All'avvio Eleu apre un documento vuoto: si comincia a scrivere subito. I menu si aprono con Alt e la lettera sottolineata: File (Alt+F), Modifica (Alt+M), Visualizza (Alt+V), Inserisci (Alt+I), Formato (Alt+O), Strumenti (Alt+S), Voce (Alt+C), Finestre (Alt+N), Aiuto (Alt+A).</p>
+<p>Accanto a ogni comando il menu dice la sua scorciatoia. L'elenco completo è in Aiuto, Scorciatoie da tastiera.</p>
+<p>Il tasto Applicazioni (o Maiusc+F10) apre il menu del punto in cui si è: su una parola sbagliata propone le correzioni, in una tabella i comandi per righe e colonne, su una nota o un'immagine quelli per modificarla, e sempre taglia, copia e incolla.</p>
+<h3>Dove sono?</h3>
+<ul>
+<li>F6: riga, colonna e pagina in cui si trova il cursore (in una tabella anche la cella).</li>
+<li>Ctrl+F6: quante parole, caratteri e paragrafi ha il documento o la selezione.</li>
+<li>Ctrl+Maiusc+F6: statistiche complete e indice di leggibilità Gulpease.</li>
+<li>Alt+Invio: la formattazione del punto in cui si è (carattere, paragrafo, titolo; su una nota o un'immagine, il suo testo).</li>
+</ul>
+
+<h2>Aprire e salvare</h2>
+<ul>
+<li>Ctrl+N: documento nuovo, al posto di quello aperto (prima Eleu chiede se salvare le modifiche).</li>
+<li>Ctrl+O: apri, al posto del documento aperto. Eleu legge documenti Word (DOCX), OpenDocument di LibreOffice (ODT), RTF, testo semplice, pagine web (HTML), libri EPUB, PDF e immagini scansionate.</li>
+<li>File, Apri in un'altra finestra: apre un documento lasciando aperto quello su cui si lavora.</li>
+<li>Ctrl+S: salva. F12: salva con nome, scegliendo il formato (DOCX, ODT di LibreOffice, RTF, testo, HTML, EPUB).</li>
+<li>File, Riapri: gli ultimi documenti usati. Riaprendo un documento si riparte dal punto in cui si era.</li>
+<li>File, Proprietà: titolo, autore, oggetto e parole chiave del documento.</li>
+<li>File, Salva selezione: salva in un file a parte solo il testo selezionato.</li>
+</ul>
+<p>Se un file contiene cose che Eleu non sa conservare (per esempio celle unite nelle tabelle), Eleu lo dice all'apertura e al primo salvataggio chiede un nome nuovo, così l'originale non si rovina.</p>
+<p>Le revisioni di Word (modifiche tracciate) si leggono già accettate: il testo cancellato non c'è, quello aggiunto sì. Anche in questo caso Eleu non salva sopra l'originale.</p>
+<p>Ogni minuto (o ogni quanto si sceglie in Strumenti, Opzioni) Eleu tiene da parte una copia del documento: se il computer si spegne all'improvviso, alla riapertura propone di recuperarla.</p>
+<h3>PDF e immagini scansionate</h3>
+<p>Aprendo un PDF Eleu ne prende il testo; se il PDF è una scansione, o se si apre una foto di una pagina, legge il testo con il riconoscimento dei caratteri di Windows. Il testo riconosciuto può contenere errori: F7 porta al prossimo errore probabile e Ctrl+F7 lo corregge con il suggerimento.</p>
+
+<h2>Scrivere e correggere</h2>
+<h3>Cercare e sostituire</h3>
+<ul>
+<li>Ctrl+Maiusc+T (o Ctrl+F): trova. F3 e Maiusc+F3: occorrenza successiva e precedente.</li>
+<li>Ctrl+Maiusc+S (o Ctrl+H): sostituisci. F4: sostituisce e passa alla successiva.</li>
+<li>Con i caratteri jolly: ? sta per un carattere, * per più caratteri, # per una cifra.</li>
+<li>Ctrl+Maiusc+G (o Ctrl+G): vai a una pagina, una riga o un paragrafo; F2 e Maiusc+F2 ripetono il salto.</li>
+<li>Strumenti, Sostituzioni multiple: un elenco di sostituzioni da fare tutte in un colpo, che resta per la volta dopo.</li>
+</ul>
+<h3>Selezionare</h3>
+<ul>
+<li>F8 segna l'inizio di un blocco; ci si sposta con i tasti che si vuole e F8 di nuovo seleziona fino al cursore. Maiusc+F8 annulla il blocco.</li>
+<li>Modifica, Seleziona: seleziona la parola, la riga o il paragrafo in cui si è. Eleu dice quante parole ha selezionato e come comincia la selezione.</li>
+</ul>
+<h3>Controllo ortografico</h3>
+<ul>
+<li>F7 e Maiusc+F7: errore successivo e precedente, di ortografia o di punteggiatura (spazi, virgole, accenti come «perchè»).</li>
+<li>Ctrl+F7: corregge con il suggerimento.</li>
+<li>Ctrl+Maiusc+F7: la finestra Controllo ortografico, con i suggerimenti e i pulsanti Cambia, Cambia tutti, Ignora, Ignora tutti, Aggiungi al dizionario.</li>
+<li>Strumenti, Correzione, Dizionario personale: le parole da non segnalare.</li>
+</ul>
+<h3>Altri strumenti</h3>
+<ul>
+<li>Strumenti, Pulizia del testo: toglie spazi doppi, righe vuote ripetute, parole divise dal trattino, paragrafi spezzati (utile con il testo copiato da un PDF).</li>
+<li>Strumenti, Ordina paragrafi: mette in ordine alfabetico i paragrafi selezionati.</li>
+<li>Strumenti, Confronta con un altro documento: dice quali paragrafi sono cambiati, aggiunti o tolti.</li>
+<li>Strumenti, Cerca sul web: cerca la parola su cui si è (o la selezione) su Wikipedia, sul vocabolario Treccani, sul Wikizionario o su Google.</li>
+<li>Strumenti, Informazioni, Parole più usate: quante volte compare ogni parola, utile per evitare le ripetizioni.</li>
+<li>Inserisci, Simbolo: i caratteri che non sono sulla tastiera (È maiuscola, virgolette basse, euro, gradi, frecce...), ognuno con il suo nome, o qualsiasi carattere dal suo codice Unicode.</li>
+</ul>
+
+<h2>Formattare</h2>
+<ul>
+<li>Ctrl+B, Ctrl+I, Ctrl+U: grassetto, corsivo, sottolineato.</li>
+<li>Ctrl+Maiusc+F (o Ctrl+D): finestra Carattere (tipo, dimensione, colori con il loro contrasto, posizione).</li>
+<li>Ctrl+Maiusc+P: finestra Paragrafo (allineamento, rientri, interlinea, spazi, livello di titolo).</li>
+<li>Ctrl+L, Ctrl+E, Ctrl+R, Ctrl+J: allinea a sinistra, al centro, a destra, giustifica.</li>
+<li>Ctrl+1, Ctrl+5, Ctrl+2: interlinea singola, una e mezza, doppia.</li>
+<li>Ctrl+Maiusc+L e Ctrl+Maiusc+N: elenco puntato e numerato.</li>
+<li>Ctrl+Maiusc+A: alterna maiuscole e minuscole.</li>
+</ul>
+<p>Nelle finestre Carattere, Paragrafo e Imposta pagina la casella «Predefinito» usa le scelte anche per i documenti nuovi.</p>
+
+<h2>La struttura del documento</h2>
+<p>Il menu Inserisci ha un sottomenu per ogni tipo di elemento, sempre con gli stessi comandi: aggiungi, elimina, precedente, successivo ed Elenco, che mostra l'elenco di tutti gli elementi di quel tipo per andarci o eliminarli.</p>
+<ul>
+<li>Segnalibri (Ctrl+Maiusc+F5): punti con un nome a cui tornare.</li>
+<li>Note a piè di pagina (Ctrl+Alt+F): nel testo resta il numero; Alt+Invio sul numero legge la nota.</li>
+<li>Immagini: ognuna con la sua descrizione, che lo screen reader legge al posto dell'immagine.</li>
+<li>Commenti (Ctrl+Alt+M): una nota a margine sulla selezione o sulla parola in cui si è, con il nome di chi la scrive, come i commenti di Word e di LibreOffice. Arrivando su un testo commentato Eleu lo segnala; Alt+Invio legge il commento. Il menu del tasto Applicazioni li modifica e li elimina.</li>
+<li>Tabelle: Ctrl+Alt e le frecce passano da una cella all'altra; entrando in una cella Eleu dice riga, colonna e il nome della colonna (la prima riga fa da intestazione). Si possono aggiungere e togliere righe e colonne e ordinare le righe. La prima riga può fare da intestazione (Inserisci, Tabelle, Riga di intestazione): i nomi delle colonne si ripetono in cima a ogni pagina stampata, e Word e LibreOffice la riconoscono.</li>
+<li>Interruzioni di pagina (Ctrl+Invio).</li>
+<li>Titoli (Ctrl+Alt+T), su 9 livelli; Inserisci sommario crea l'indice con i numeri di pagina.</li>
+</ul>
+
+<h2>Pagina e stampa</h2>
+<ul>
+<li>File, Imposta pagina: foglio, orientamento, margini, intestazione e piè di pagina. Nell'intestazione si possono mettere il numero di pagina e il titolo: nel campo si preme il tasto Applicazioni e si sceglie dal menu.</li>
+<li>Ctrl+P: stampa, con la scelta della stampante, delle pagine e delle copie. File, Anteprima di stampa per vedere le pagine.</li>
+</ul>
+
+<h2>La voce</h2>
+<ul>
+<li>F11: legge dal cursore (o la selezione); di nuovo F11 mette in pausa e riprende.</li>
+<li>Ctrl+F11: legge tutto dall'inizio. Esc o Maiusc+F11: ferma, con il cursore sulla parola raggiunta.</li>
+<li>Voce, Impostazioni della voce: voce, velocità e volume. Eleu usa le voci di Windows, anche quelle SAPI acquistate a parte.</li>
+<li>Voce, Pronunce: come dire certe parole o sigle.</li>
+<li>Voce, Crea un audiolibro MP3: un file per capitolo.</li>
+<li>Voce, Crea un libro DAISY: un libro con testo e audio sincronizzati, da ascoltare con un lettore DAISY andando di titolo in titolo.</li>
+</ul>
+
+<h2>Il Braille</h2>
+<ul>
+<li>File, Salva come Braille (BRF): il file Braille per le stampanti Braille e i programmi di stampa.</li>
+<li>Ctrl+Alt+P: stampa Braille. Nella finestra si scelgono celle per riga, righe per pagina, numero di pagina, titolo in cima, margine per la rilegatura, pagine a stampa, sommario e le pagine da stampare. In più: interlinea doppia (una riga vuota tra una riga e l'altra); fronte e retro (sul retro il margine della rilegatura e il numero di pagina passano dalla parte giusta, così il numero non finisce sul bordo); due righe libere a metà pagina, per piegare il foglio da spedire senza schiacciare i punti.</li>
+<li>Visualizza, Anteprima Braille; Ctrl+Maiusc+R: la riga corrente in Braille in fondo alla finestra, per chi vede o impara.</li>
+<li>Modifica, Copia braille: copia la selezione già in Braille.</li>
+<li>Ctrl+Maiusc+6: scrittura Braille a sei tasti. F, D, S sono i punti 1, 2, 3; J, K, L i punti 4, 5, 6. Si premono insieme e, lasciandoli, si scrive il carattere.</li>
+</ul>
+<h3>Immagini in rilievo</h3>
+<p>Inserisci, Immagini, Grafica in rilievo (anche dal menu del tasto Applicazioni su un'immagine) prepara un'immagine da toccare. Se il cursore non è su un'immagine del documento, Eleu chiede un file.</p>
+<ul>
+<li>Tratto: solo i contorni, di solito più facili da seguire con le dita, oppure le zone piene.</li>
+<li>Sensibilità: quanto un colore deve staccarsi dallo sfondo per andare in rilievo; più alta vuol dire più punti. «Inverti» mette in rilievo lo sfondo invece della figura.</li>
+<li>Larghezza e altezza massime in celle e righe Braille; la didascalia va in cima in Braille.</li>
+<li>L'anteprima mostra le celle Braille: con il display Braille si può toccare il risultato prima di stampare.</li>
+<li>Stampa Braille o Salva file BRF: la grafica fatta di punti, per la stampante Braille.</li>
+<li>Stampa su carta a microcapsule o Salva il disegno: un disegno nero su bianco con tratti spessi e la didascalia in punti Braille disegnati; passato nel fornetto, il nero si gonfia e diventa in rilievo.</li>
+</ul>
+
+<h2>Per chi vede poco</h2>
+<ul>
+<li>Ctrl+Alt+più e Ctrl+Alt+meno: ingrandisce e rimpicciolisce il testo; Ctrl+Alt+0 torna normale.</li>
+<li>A sinistra c'è una colonna di pulsanti grandi con il nome scritto; Visualizza, Barra degli strumenti la nasconde. Dalla tastiera la si raggiunge con Ctrl+Tab e si torna al testo con Esc.</li>
+<li>Il righello in alto mostra i rientri del paragrafo, che si possono spostare con il mouse.</li>
+<li>Strumenti, Correzione, Sottolinea errori mentre scrivi: le parole sbagliate sottolineate in rosso.</li>
+</ul>
+
+<h2>Opzioni, suoni e annunci</h2>
+<p>Strumenti, Opzioni (Ctrl+Maiusc+O) raccoglie le preferenze in tre schede; Ctrl+Tab passa dall'una all'altra.</p>
+<ul>
+<li>Generale: riaprire all'avvio l'ultimo documento e ogni quanti minuti tenere la copia di recupero.</li>
+<li>Annunci e suoni: muovendosi nel testo, Eleu segnala titoli, segnalibri, note e interruzioni di pagina con un suono breve, a voce, in entrambi i modi o per niente. Un suono grave avverte quando il cursore arriva su una parola sbagliata. Altri suoni confermano la fine della lettura e il salvataggio. Si sceglie anche il volume dei suoni (il volume di Windows non cambia) e se dire le celle delle tabelle e le descrizioni delle immagini.</li>
+<li>Correzione: sottolineare gli errori, saltare le sigle in maiuscolo e le parole con numeri.</li>
+</ul>
+<p>I suoni: titolo, due note che salgono; segnalibro, un tintinnio; nota, due tocchi; interruzione di pagina, un colpo basso; parola sbagliata, un ronzio grave; fine lettura, due note che scendono; salvato, tre note che salgono. Mentre si scrive i segnali tacciono.</p>
+
+<h2>Più documenti</h2>
+<p>Nuovo e Apri lavorano nella finestra in cui si è. Per tenere aperti più documenti insieme si usa File, Apri in un'altra finestra, oppure Finestre, Nuova finestra: ogni documento ha allora la sua finestra. Si passa dall'uno all'altro con Alt+Tab, dal menu Finestre o con Ctrl+Alt+F6 (successiva) e Ctrl+Alt+Maiusc+F6 (precedente). Ctrl+F4 chiude il documento.</p>
+
+<h2>Aggiornamenti</h2>
+<p>Una volta al giorno, all'avvio, Eleu controlla su GitHub se c'è una versione nuova (si spegne in Strumenti, Opzioni). Se c'è, mostra le novità e propone: Scarica e installa, Apri la pagina della versione, Salta questa versione, Più tardi. Con Scarica e installa Eleu scarica l'installer, controlla che sia proprio quello pubblicato, chiude i documenti chiedendo se salvarli, installa la nuova versione e si riapre. Si può controllare quando si vuole da Aiuto, Controlla aggiornamenti.</p>
+
+<h2>Informazioni</h2>
+<p>Eleu è sviluppato da Gabriele Cusimano (github.com/Gabro777). Aiuto, Informazioni su Eleu mostra la versione e apre la sua pagina GitHub.</p>
+<p>Eleu è software libero e gratuito, con licenza GNU GPL versione 3: si può usare, studiare, modificare e ridistribuire, e le versioni modificate devono restare libere. Il testo della licenza è nel file LICENSE.txt, nella cartella del programma.</p>
+<p>Eleu usa liblouis per il Braille (licenza LGPL) e le voci, il riconoscimento dei caratteri e il controllo ortografico di Windows. Il controllo ortografico in italiano richiede la lingua italiana installata in Windows.</p>
+</body>
+</html>

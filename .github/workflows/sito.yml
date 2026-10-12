@@ -1,0 +1,48 @@
+name: Sito
+
+# La pagina per scaricare Eleu (GitHub Pages): sito/ più l'icona e la guida del programma, adattata al web.
+# Con l'account gratuito GitHub Pages funziona solo con il repository pubblico: finché è privato il lavoro si salta.
+on:
+  push:
+    branches: [main]
+    paths: ['sito/**', 'src/Eleu/Guida/**', 'docs/icona.png', '.github/workflows/sito.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sito
+  cancel-in-progress: true
+
+jobs:
+  pubblica:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pubblicazione.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepara il sito
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force _sito | Out-Null
+          Copy-Item sito/* _sito/
+          Copy-Item docs/icona.png _sito/icona.png
+          # La guida del programma, con lo stile del sito e il collegamento per tornare alla pagina principale.
+          $guida = Get-Content src/Eleu/Guida/Guida.html -Raw -Encoding utf8
+          $guida = $guida.Replace('</head>', "<meta name=`"viewport`" content=`"width=device-width, initial-scale=1`">`n<link rel=`"stylesheet`" href=`"stile.css`">`n</head>")
+          $guida = $guida.Replace('<body>', "<body class=`"guida`">`n<main>`n<a class=`"torna`" href=`"./`">Torna alla pagina di Eleu</a>")
+          $guida = $guida.Replace('</body>', "</main>`n</body>")
+          Set-Content _sito/guida.html $guida -Encoding utf8
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _sito
+      - id: pubblicazione
+        uses: actions/deploy-pages@v4
