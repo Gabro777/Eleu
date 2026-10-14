@@ -25,7 +25,7 @@
 <h2>Aprire e salvare</h2>
 <ul>
 <li>Ctrl+N: documento nuovo, al posto di quello aperto (prima Eleu chiede se salvare le modifiche).</li>
-<li>Ctrl+O: apri, al posto del documento aperto. Eleu legge documenti Word (DOCX), OpenDocument di LibreOffice (ODT), RTF, testo semplice, pagine web (HTML), libri EPUB, PDF e immagini scansionate.</li>
+<li>Ctrl+O: apri, al posto del documento aperto. Eleu legge documenti Word (DOCX), OpenDocument di LibreOffice (ODT), RTF, testo semplice, pagine web (HTML), libri EPUB, PDF, immagini scansionate e file Braille (BRF). Di un file BRF, fatto con Eleu o con un altro programma, Eleu riporta il Braille in testo normale da modificare: toglie numeri di pagina, titoli ripetuti e righe di impaginazione e ricompone i paragrafi.</li>
 <li>File, Apri in un'altra finestra: apre un documento lasciando aperto quello su cui si lavora.</li>
 <li>Ctrl+S: salva. F12: salva con nome, scegliendo il formato (DOCX, ODT di LibreOffice, RTF, testo, HTML, EPUB).</li>
 <li>File, Riapri: gli ultimi documenti usati. Riaprendo un documento si riparte dal punto in cui si era.</li>
@@ -39,6 +39,8 @@
 <p>Aprendo un PDF Eleu ne prende il testo; se il PDF è una scansione, o se si apre una foto di una pagina, legge il testo con il riconoscimento dei caratteri di Windows. Il testo riconosciuto può contenere errori: F7 porta al prossimo errore probabile e Ctrl+F7 lo corregge con il suggerimento.</p>
 <h3>Acquisire da scanner</h3>
 <p>Ctrl+Alt+S (File, Acquisisci da scanner) legge un documento di carta: Eleu lo scansiona, ne riconosce il testo e lo apre come documento nuovo, da correggere, salvare o stampare in Braille. Nella finestra si sceglie lo scanner, se ce n'è più di uno, e dove sono i fogli: sul vetro, una pagina alla volta, oppure nell'alimentatore, tutte insieme. Con il vetro, dopo ogni pagina Eleu chiede se ce n'è un'altra: si mette il foglio seguente e si risponde Sì, oppure No per passare al riconoscimento del testo. Funziona con gli scanner e le stampanti multifunzione che hanno il driver per Windows; Eleu sceglie da solo le impostazioni migliori per leggere il testo.</p>
+<h3>Foto dal telefono</h3>
+<p>Senza scanner, una pagina si può fotografare con il telefono: File, Foto dal telefono. Eleu mostra un codice QR e lo stesso indirizzo scritto; con il telefono collegato alla stessa rete Wi-Fi del computer si inquadra il codice con la fotocamera, oppure si scrive l'indirizzo nel browser del telefono, e si preme «Fotografa una pagina». Si possono mandare più pagine, una dopo l'altra: Eleu suona e dice ogni foto che arriva. Alla fine, Riconosci il testo apre il testo come documento nuovo. Le foto viaggiano solo nella rete di casa, verso un indirizzo segreto che cambia ogni volta, e solo finché la finestra è aperta. La prima volta Windows può chiedere se Eleu può usare la rete: si sceglie Consenti, per le reti private. Se Windows considera pubblica la rete di casa, il telefono viene bloccato e la finestra lo avvisa: si imposta la rete come privata da Impostazioni di Windows, Rete e Internet, la propria rete (Wi-Fi o Ethernet), Tipo di profilo di rete.</p>
 
 <h2>Scrivere e correggere</h2>
 <h3>Cercare e sostituire</h3>
@@ -103,8 +105,9 @@
 
 <h2>La voce</h2>
 <ul>
-<li>F11: legge dal cursore (o la selezione); di nuovo F11 mette in pausa e riprende.</li>
+<li>F11: legge dal cursore (o la selezione); di nuovo F11 mette in pausa e riprende. Se il cursore è alla fine del testo, legge dall'inizio.</li>
 <li>Ctrl+F11: legge tutto dall'inizio. Esc o Maiusc+F11: ferma, con il cursore sulla parola raggiunta.</li>
+<li>Durante la lettura la parola che si sente è evidenziata nel testo, che scorre da solo per tenerla in vista: aiuta chi vede poco e chi ha la dislessia a seguire. Il cursore non si sposta e lo screen reader non viene disturbato.</li>
 <li>Voce, Impostazioni della voce: voce, velocità e volume. Eleu usa le voci di Windows, anche quelle SAPI acquistate a parte.</li>
 <li>Voce, Pronunce: come dire certe parole o sigle.</li>
 <li>Voce, Crea un audiolibro MP3: un file per capitolo.</li>
@@ -115,6 +118,8 @@
 <ul>
 <li>File, Salva come Braille (BRF): il file Braille per le stampanti Braille e i programmi di stampa.</li>
 <li>Ctrl+Alt+P: stampa Braille. Nella finestra si scelgono celle per riga, righe per pagina, numero di pagina, titolo in cima, margine per la rilegatura, pagine a stampa, sommario e le pagine da stampare. In più: interlinea doppia (una riga vuota tra una riga e l'altra); fronte e retro (sul retro il margine della rilegatura e il numero di pagina passano dalla parte giusta, così il numero non finisce sul bordo); due righe libere a metà pagina, per piegare il foglio da spedire senza schiacciare i punti.</li>
+<li>Prima di stampare o salvare il Braille, Eleu controlla il documento e, se trova qualcosa che verrà male, lo elenca: immagini senza descrizione, titoli vuoti, righe di soli simboli, interruzioni di pagina che lasciano un foglio quasi vuoto, tabelle la cui prima riga sembra già contenere dati (in Braille la prima riga dà il nome alle colonne), simboli che il Braille non sa scrivere, parole più lunghe della riga. Vai porta al punto, Correggi sistema quello scelto, Correggi tutto sistema quelli che non richiedono domande; Stampa comunque (o Salva comunque) va avanti. Lo stesso controllo si fa quando si vuole da Strumenti, Controllo per il Braille.</li>
+<li>Nella finestra della stampa Braille, la casella «Anche una copia in nero (PDF)» crea in più un PDF con le pagine Braille disegnate e, sotto ogni parola Braille, la stessa parola in lettere normali: serve a insegnanti, genitori e colleghi che non leggono il Braille. La casella non è mai spuntata all'inizio.</li>
 <li>Visualizza, Anteprima Braille; Ctrl+Maiusc+R: la riga corrente in Braille in fondo alla finestra, per chi vede o impara.</li>
 <li>Modifica, Copia braille: copia la selezione già in Braille.</li>
 <li>Ctrl+Maiusc+6: scrittura Braille a sei tasti. F, D, S sono i punti 1, 2, 3; J, K, L i punti 4, 5, 6. Si premono insieme e, lasciandoli, si scrive il carattere.</li>
@@ -129,6 +134,7 @@
 <li>Stampa Braille o Salva file BRF: la grafica fatta di punti, per la stampante Braille.</li>
 <li>Stampa su carta a microcapsule o Salva il disegno: un disegno nero su bianco con tratti spessi e la didascalia in punti Braille disegnati; passato nel fornetto, il nero si gonfia e diventa in rilievo.</li>
 </ul>
+<p>Inserisci, Tabelle, Grafico in rilievo dalla tabella fa un grafico a barre da toccare con i numeri della tabella in cui si trova il cursore: i nomi vengono dalla prima colonna, i valori dalla colonna del cursore (o dalla prima colonna con numeri). Le barre sono larghe e ben distanziate, con una linea di base; i nomi e i valori, barra per barra da sinistra, sono nella didascalia in Braille. Poi si stampa come le altre immagini in rilievo.</p>
 
 <h2>Per chi vede poco</h2>
 <ul>

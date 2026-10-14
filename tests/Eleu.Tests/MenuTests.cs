@@ -151,6 +151,8 @@ public class MenuTests
         new UI.OptionsDialog(new Settings()),
         new UI.SymbolsDialog(),
         new UI.ScanDialog([new("a", "Scanner A", true, false), new("b", "Scanner B", true, true)]),
+        new UI.PhoneDialog("http://192.168.1.20:52114/0123456789abcdef01234567", publicNetwork: true),
+        new UI.BrailleCheckDialog([new(Braille.IssueKind.SymbolsOnly, 0, "Riga di soli simboli")], [1], "&Stampa comunque"),
         new UI.UpdateDialog(Updates.FromJson("""{"tag_name":"v9.0.0","body":"- novità","assets":[{"name":"a.msi","browser_download_url":"x"}]}""")!, new Version(1, 0, 0), installable: true),
         new UI.TactileGraphicsDialog(new System.Drawing.Bitmap(50, 50), "Prova", ["Stampante"], null, 32, 27, _ => null),
     ];

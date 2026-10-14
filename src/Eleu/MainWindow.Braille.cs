@@ -113,6 +113,8 @@ public sealed partial class MainWindow
     /// <summary>File > Salva come Braille, BRF (toFile) or File > Stampa braille.</summary>
     private void Braille(bool toFile)
     {
+        if (!CheckBeforeBraille(toFile ? "&Salva comunque" : "&Stampa comunque"))
+            return;
         if (TranslateToBraille() is not List<BrailleParagraph> paragraphs)
             return;
 
@@ -150,41 +152,83 @@ public sealed partial class MainWindow
         var data = BrfFormat.Byte(pages);
         var howManyPages = pages.Count == 1 ? "1 pagina" : $"{pages.Count} pagine";
 
+        string done;
         if (window.Printer is string printer)
         {
             try
             {
                 BraillePrinter.Print(printer, data, DocumentName);
-                AnnounceShortly($"Inviate {howManyPages} Braille a {printer}");
+                done = $"Inviate {howManyPages} Braille a {printer}";
             }
             catch (IOException e)
             {
                 MessageBox.Show(this, $"{e.Message}\n\nControlla che la stampante sia accesa e collegata.", AppName,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            return;
+        }
+        else
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Title = "Salva il file Braille",
+                Filter = "File Braille (*.brf)|*.brf",
+                FileName = Path.GetFileNameWithoutExtension(DocumentName),
+                InitialDirectory = InitialFolder(),
+                AddExtension = true,
+                OverwritePrompt = true,
+            };
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+            try
+            {
+                File.WriteAllBytes(dialog.FileName, data);
+                done = $"Salvato {Path.GetFileName(dialog.FileName)}, {howManyPages} Braille";
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                MessageBox.Show(this, $"Impossibile salvare il file Braille.\n\n{e.Message}", AppName,
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
         }
 
+        if (window.InkCopy && SaveInkCopy(pages, chosen, from, all.Count) is string pdf)
+            done += $". Copia in nero salvata: {pdf}";
+        AnnounceShortly(done);
+    }
+
+    /// <summary>The Braille pages with the letters underneath, as a PDF for who does not read Braille; the file name, or null.</summary>
+    private string? SaveInkCopy(List<List<string>> pages, PageFormat format, int firstNumber, int total)
+    {
         using var dialog = new SaveFileDialog
         {
-            Title = "Salva il file Braille",
-            Filter = "File Braille (*.brf)|*.brf",
-            FileName = Path.GetFileNameWithoutExtension(DocumentName),
+            Title = "Salva la copia in nero",
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = $"{Path.GetFileNameWithoutExtension(DocumentName)} - Braille in nero",
             InitialDirectory = InitialFolder(),
             AddExtension = true,
             OverwritePrompt = true,
         };
         if (dialog.ShowDialog(this) != DialogResult.OK)
-            return;
+            return null;
         try
         {
-            File.WriteAllBytes(dialog.FileName, data);
-            AnnounceShortly($"Salvato {Path.GetFileName(dialog.FileName)}, {howManyPages} Braille");
+            Cursor = Cursors.WaitCursor;
+            var pdf = InkCopy.Pdf(pages, format.CellsPerLine, format.LinesPerPage, BrailleTranslator.BackTranslate,
+                DocumentTitle, firstNumber, total);
+            File.WriteAllBytes(dialog.FileName, pdf);
+            return Path.GetFileName(dialog.FileName);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            MessageBox.Show(this, $"Impossibile salvare il file Braille.\n\n{e.Message}", AppName,
+            MessageBox.Show(this, $"Impossibile salvare la copia in nero.\n\n{e.Message}", AppName,
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return null;
+        }
+        finally
+        {
+            Cursor = Cursors.Default;
         }
     }
 

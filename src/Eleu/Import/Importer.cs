@@ -26,11 +26,17 @@ public static class Importer
     public static bool IsImportable(string path)
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();
-        return extension == ".pdf" || ImageExtensions.Contains(extension);
+        return extension is ".pdf" or ".brf" || ImageExtensions.Contains(extension);
     }
 
     public static async Task<ImportedText> ImportAsync(string path, IProgress<ImportProgress>? progress, CancellationToken cancel)
     {
+        if (Path.GetExtension(path).Equals(".brf", StringComparison.OrdinalIgnoreCase))
+        {
+            var bytes = await File.ReadAllBytesAsync(path, cancel);
+            var (paragraphs, brfPages) = await Task.Run(() => Braille.BrfReader.Read(bytes, Braille.BrailleTranslator.BackTranslate), cancel);
+            return new ImportedText(paragraphs, brfPages, WithOcr: false);
+        }
         if (ImageExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
         {
             progress?.Report(new ImportProgress(1, 1, Ocr: true));

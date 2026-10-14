@@ -75,6 +75,8 @@ Una volta installato, l'avviso non ricompare.
   **libri EPUB**.
 - Legge i **PDF** e le **foto o scansioni di pagine scritte**, con il riconoscimento dei caratteri di Windows, e
   **acquisisce direttamente dallo scanner** (Ctrl+Alt+S): una pagina alla volta dal vetro o tutte dall'alimentatore.
+  Senza scanner, le pagine si fotografano con il **telefono**: Eleu mostra un codice QR e le foto arrivano dalla rete di
+  casa, senza app da installare.
 - Carattere, paragrafo, titoli su nove livelli, elenchi, interruzioni di pagina, intestazione e piè di pagina.
 - **Controllo ortografico e della punteggiatura**: F7 porta al prossimo errore, Ctrl+F7 lo corregge, il tasto
   Applicazioni sulla parola sbagliata propone le correzioni. Dizionario personale.
@@ -99,7 +101,8 @@ Una volta installato, l'avviso non ricompare.
 ### Ascoltare
 
 - Lettura ad alta voce con le voci di Windows, anche quelle acquistate a parte (SAPI): F11 legge e mette in pausa,
-  Esc ferma lasciando il cursore dove sei arrivato.
+  Esc ferma lasciando il cursore dove sei arrivato. La parola che si sente è evidenziata nel testo, per chi vede poco o
+  ha la dislessia.
 - **Audiolibri MP3**, un file per capitolo, e **libri DAISY** con testo e voce sincronizzati.
 - Pronunce personali per parole e sigle.
 
@@ -109,10 +112,16 @@ Una volta installato, l'avviso non ricompare.
   la rilegatura, pagine a stampa, sommario e intervallo di pagine.
 - **Interlinea doppia**, **stampa fronte e retro** (sul retro margine e numero passano dalla parte giusta) e **due
   righe libere a metà foglio**, per piegarlo e spedirlo senza schiacciare i punti.
+- **Controllo prima della stampa**: Eleu segnala quello che in Braille verrebbe male (immagini senza descrizione,
+  righe di soli simboli, fogli quasi vuoti, simboli senza forma Braille...) e lo corregge.
+- **Copia in nero** (facoltativa): un PDF con le pagine Braille e, sotto ogni parola, la stessa parola in lettere, per
+  insegnanti, genitori e colleghi che non leggono il Braille.
+- Apre i **file BRF** fatti con altri programmi e li riporta in testo da modificare.
 - Anteprima Braille, riga corrente in Braille in fondo alla finestra, copia della selezione già in Braille.
 - **Scrittura a sei tasti** (F D S J K L) come con una dattilobraille.
 - **Immagini in rilievo**: un'immagine diventa grafica a punti per la stampante Braille, con un'anteprima che si legge
   dal display Braille, oppure un disegno a tratti spessi per la carta a microcapsule, con la didascalia in Braille.
+- **Grafici in rilievo**: da una tabella di numeri, un grafico a barre da toccare, con nomi e valori nella didascalia.
 
 ### Per chi vede poco
 
@@ -200,5 +209,6 @@ Copyright © 2026 Gabriele Cusimano.
 - [Open XML SDK](https://github.com/dotnet/Open-XML-SDK) per i file Word (MIT)
 - [NAudio](https://github.com/naudio/NAudio) per l'audio (MIT)
 - [PdfPig](https://github.com/UglyToad/PdfPig) per i PDF (Apache 2.0)
+- [QRCoder](https://github.com/codebude/QRCoder) per il codice QR delle foto dal telefono (MIT)
 - [Html Agility Pack](https://html-agility-pack.net) per HTML ed EPUB (MIT)
 - Le voci, il riconoscimento dei caratteri e il controllo ortografico sono quelli di Windows

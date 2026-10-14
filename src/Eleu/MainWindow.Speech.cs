@@ -12,6 +12,8 @@ public sealed partial class MainWindow
     private SpeechReader? _reader;
     private SpeechReader? _testReader;
     private int? _cursorWhilePaused;
+    private System.Windows.Forms.Timer? _readingTimer;
+    private string _readingText = "";
 
     private VoiceCatalog Catalog
     {
@@ -42,7 +44,11 @@ public sealed partial class MainWindow
             if (_reader is null)
             {
                 _reader = new SpeechReader(SynthesizeWithChosenVoice);
-                _reader.Finished += (_, _) => BeginInvoke(() => ConfirmationSound(Cue.EndOfReading));
+                _reader.Finished += (_, _) => BeginInvoke(() =>
+                {
+                    ClearReadingWord();
+                    ConfirmationSound(Cue.EndOfReading);
+                });
                 _reader.Error += (_, e) => MessageBox.Show(this, $"La sintesi vocale si è interrotta.\n\n{e.Message}", AppName,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -78,6 +84,9 @@ public sealed partial class MainWindow
 
         int start = _text.SelectionStart;
         int end = _text.SelectionLength > 0 ? start + _text.SelectionLength : _text.TextLength;
+        // At the end of the text (just after typing) there is nothing ahead: read from the beginning instead.
+        if (_text.SelectionLength == 0 && Passages.FromText(_text.Text, start, end).Count == 0)
+            start = 0;
         StartReading(start, end);
     }
 
@@ -98,6 +107,7 @@ public sealed partial class MainWindow
         }
         _cursorWhilePaused = null;
         Reader.Start(passages);
+        FollowReading();
     }
 
     /// <summary>Stops reading leaving the cursor on the word reached. Returns false if it was not reading.</summary>
@@ -107,7 +117,47 @@ public sealed partial class MainWindow
             return false;
         MoveCursorWhileReading();
         _reader.Stop();
+        ClearReadingWord();
         return true;
+    }
+
+    /// <summary>
+    /// While reading aloud the word being heard is highlighted and kept on screen (it helps low-vision and
+    /// dyslexic readers follow along). The text and the cursor do not move: the screen reader stays quiet.
+    /// </summary>
+    private void FollowReading()
+    {
+        _readingText = _text.Text;
+        if (_readingTimer is null)
+        {
+            _readingTimer = new System.Windows.Forms.Timer { Interval = 80 };
+            _readingTimer.Tick += (_, _) => UpdateReadingWord();
+        }
+        _readingTimer.Start();
+    }
+
+    private void UpdateReadingWord()
+    {
+        if (_reader is not { IsReading: true })
+        {
+            ClearReadingWord();
+            return;
+        }
+        if (_reader.CurrentPosition is not int position || position > _readingText.Length)
+            return;
+        var (start, end) = WordAround(_readingText, position);
+        if (end <= start)
+            return;
+        bool changed = _text.ReadingWord != (start, end);
+        _text.ReadingWord = (start, end);
+        if (changed)
+            _text.ShowReadingWord();
+    }
+
+    private void ClearReadingWord()
+    {
+        _readingTimer?.Stop();
+        _text.ReadingWord = null;
     }
 
     private void MoveCursorWhileReading()

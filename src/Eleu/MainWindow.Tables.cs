@@ -66,6 +66,39 @@ public sealed partial class MainWindow
         return content.Length == 0 ? "vuota" : content;
     }
 
+    /// <summary>
+    /// Inserisci > Tabelle > Grafico in rilievo dalla tabella: a bar chart of the cursor's column (names from the first
+    /// column), in Braille dots or for microcapsule paper, with names and values in the Braille caption.
+    /// </summary>
+    private void TableChart()
+    {
+        if (CellHere() is not { } cell)
+            return;
+        var text = _text.Text;
+        var rows = cell.Table.Rows
+            .Select(r => (IReadOnlyList<string>)[.. r.Select(c => TextStructure.Readable(text[c.Start..c.End]).Trim())])
+            .ToList();
+        if (Eleu.Braille.BarChart.FromTable(rows, cell.Column) is not { } chart)
+        {
+            MessageBox.Show(this, "In questa tabella non ci sono numeri da mettere in un grafico.", AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (chart.Bars.Count > Eleu.Braille.BarChart.MaxBars)
+        {
+            MessageBox.Show(this, $"La tabella ha {chart.Bars.Count} righe di numeri: in rilievo si distinguono al massimo {Eleu.Braille.BarChart.MaxBars} barre.",
+                AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var figure = Eleu.Braille.BarChart.Draw(chart);
+        using var window = new TactileGraphicsDialog(figure, Eleu.Braille.BarChart.Caption(chart), Eleu.Braille.BraillePrinter.Installed(),
+            _settings.BraillePrinter, _settings.BrailleCells, _settings.BrailleLines, TranslateIfPossible,
+            Eleu.Braille.TactileStroke.Filled, "Grafico in rilievo");
+        window.ShowDialog(this);
+        if (window.ChosenPrinter is string printer)
+            _settings.BraillePrinter = printer;
+    }
+
     private CellInText? CellHere(bool warn = true)
     {
         var cell = TextStructure.CellAt(_text.Text, _text.SelectionStart);

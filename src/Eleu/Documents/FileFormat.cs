@@ -5,9 +5,9 @@ public enum FileFormat { Docx, Text, Rtf, Html, Epub, Odt }
 public static class FileFormats
 {
     public const string OpenFilter =
-        "Documenti, libri, PDF e immagini|*.docx;*.odt;*.txt;*.rtf;*.htm;*.html;*.xhtml;*.epub;*.pdf;*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp;*.gif" +
+        "Documenti, libri, PDF, Braille e immagini|*.docx;*.odt;*.txt;*.rtf;*.htm;*.html;*.xhtml;*.epub;*.pdf;*.brf;*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp;*.gif" +
         "|Documento Word (*.docx)|*.docx|Documento OpenDocument (*.odt)|*.odt|Testo semplice (*.txt)|*.txt|Rich Text (*.rtf)|*.rtf" +
-        "|Pagina web (*.html)|*.htm;*.html;*.xhtml|Libro EPUB (*.epub)|*.epub|PDF (*.pdf)|*.pdf" +
+        "|Pagina web (*.html)|*.htm;*.html;*.xhtml|Libro EPUB (*.epub)|*.epub|PDF (*.pdf)|*.pdf|File Braille (*.brf)|*.brf" +
         "|Immagini scansionate|*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp;*.gif|Tutti i file (*.*)|*.*";
 
     /// <summary>The order matches the values of <see cref="FileFormat"/> (FilterIndex = value + 1).</summary>

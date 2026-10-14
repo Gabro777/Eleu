@@ -1,3 +1,4 @@
+using Eleu.Accessibility;
 using Eleu.Proofing;
 using Eleu.Documents;
 using Eleu.Import;
@@ -114,6 +115,77 @@ public sealed partial class MainWindow
             }
             catch (UnauthorizedAccessException)
             {
+            }
+        }
+    }
+
+    /// <summary>
+    /// File > Foto dal telefono: while the window is open the phone can send photos of pages (QR code or address);
+    /// then the text is recognized and opened as a new document, like a scan.
+    /// </summary>
+    private void PhonePhotos()
+    {
+        if (!ConfirmDiscardChanges())
+            return;
+        RememberPosition();
+        var folder = Path.Combine(Path.GetTempPath(), "Eleu-telefono-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var photos = new List<string>();
+            PhoneUpload server;
+            try
+            {
+                server = new PhoneUpload(folder);
+            }
+            catch (Exception e) when (e is InvalidOperationException or System.Net.Sockets.SocketException)
+            {
+                MessageBox.Show(this, $"Non posso ricevere foto dal telefono.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            using (server)
+            using (var window = new PhoneDialog(server.Url, PhoneUpload.OnPublicNetwork()))
+            {
+                server.PhotoReceived += file => BeginInvoke(() =>
+                {
+                    lock (photos)
+                        photos.Add(file);
+                    window.PhotoArrived();
+                    ConfirmationSound(Cue.Saved);
+                    _announcer.Announce(window.Photos == 1 ? "Arrivata la prima foto" : $"Arrivata la foto {window.Photos}");
+                });
+                if (window.ShowDialog(this) != DialogResult.OK)
+                    return;
+            }
+            List<string> images;
+            lock (photos)
+                images = [.. photos.Order(StringComparer.OrdinalIgnoreCase)];
+            if (images.Count == 0)
+                return;
+
+            var (result, error, cancelled) = RunWithProgress("Riconoscimento del testo",
+                (dialog, cancel) => Importer.RecognizePagesAsync(images, OcrProgress(dialog), cancel));
+            if (cancelled)
+            {
+                AnnounceShortly("Riconoscimento annullato");
+                return;
+            }
+            if (error is not null || result is null)
+            {
+                MessageBox.Show(this, $"Impossibile riconoscere il testo delle foto.\n\n{error?.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            var name = $"Foto del {DateTime.Now:d MMMM yyyy, HH.mm}";
+            ShowImported(result, name, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), name + ".docx"));
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // A leftover temporary folder is harmless.
             }
         }
     }

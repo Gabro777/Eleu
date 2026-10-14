@@ -30,12 +30,13 @@ public sealed class TactileGraphicsDialog : DialogBase
 
     /// <param name="translate">Translates the caption into Braille; null if Braille is not available.</param>
     public TactileGraphicsDialog(Image image, string description, IReadOnlyList<string> printers, string? chosenPrinter,
-        int cells, int pageLines, Func<string, string?> translate) : base("Grafica in rilievo", 560)
+        int cells, int pageLines, Func<string, string?> translate, TactileStroke stroke = TactileStroke.Outlines, string heading = "Grafica in rilievo")
+        : base(heading, 560)
     {
         _image = image;
         _pageLines = pageLines;
         _translate = translate;
-        _stroke = Field("&Tratto:", ComboBox(Strokes, 0));
+        _stroke = Field("&Tratto:", ComboBox(Strokes, stroke == TactileStroke.Filled ? 1 : 0));
         _threshold = Field("S&ensibilità:", ComboBox(Thresholds.Select(s => s.Name), 0));
         _invert = WholeLine(new CheckBox { Text = "&Inverti: in rilievo lo sfondo invece della figura", AutoSize = true });
         _cells = Field("&Larghezza massima (celle):", Number(cells, 10, 80, 1, 0));

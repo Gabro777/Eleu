@@ -66,7 +66,7 @@ public sealed class AboutDialog : Form
             "puoi usarlo, modificarlo e ridistribuirlo, e le versioni modificate restano libere.",
             "Il testo della licenza è nel file LICENSE.txt, nella cartella del programma.",
             "",
-            "Usa liblouis per il Braille (licenza LGPL), Open XML SDK, NAudio, PdfPig e Html Agility Pack,",
+            "Usa liblouis per il Braille (licenza LGPL), Open XML SDK, NAudio, PdfPig, Html Agility Pack e QRCoder,",
             "e le voci, il riconoscimento dei caratteri e il controllo ortografico di Windows.",
         ]);
         var info = new TextBox

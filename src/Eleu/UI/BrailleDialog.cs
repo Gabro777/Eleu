@@ -15,7 +15,7 @@ public sealed class BrailleDialog : Form
 
     private readonly ComboBox _target, _number;
     private readonly NumericUpDown _cells, _rows, _margin, _from, _to;
-    private readonly CheckBox _heading, _printPages, _tableOfContents, _lineSpacing, _doubleSided, _fold;
+    private readonly CheckBox _heading, _printPages, _tableOfContents, _lineSpacing, _doubleSided, _fold, _inkCopy;
     private readonly Label _pages;
     private readonly Func<PageFormat, int> _countPages;
     private readonly string? _headingInCells;
@@ -37,6 +37,9 @@ public sealed class BrailleDialog : Form
 
     /// <summary>The pages to send, from 1.</summary>
     public (int From, int To) Range => ((int)_from.Value, (int)Math.Max(_from.Value, _to.Value));
+
+    /// <summary>Also a PDF copy with the letters under every Braille line, for who does not read Braille. Never checked at first.</summary>
+    public bool InkCopy => _inkCopy.Checked;
 
     /// <param name="headingInCells">The document title already in Braille, for the line on top of every page.</param>
     public BrailleDialog(IReadOnlyList<string> printers, string? chosenPrinter, PageFormat format, Func<PageFormat, int> countPages,
@@ -86,6 +89,7 @@ public sealed class BrailleDialog : Form
         _lineSpacing = CheckBox(grid, "Inter&linea doppia (una riga vuota tra una riga e l'altra)", format.DoubleSpacing);
         _doubleSided = CheckBox(grid, "Stampa &fronte e retro (sul retro margine e numero passano dalla parte giusta)", format.DoubleSided);
         _fold = CheckBox(grid, "Due righe libere a metà pagina, per &piegare il foglio senza schiacciare i punti", format.FoldInHalf);
+        _inkCopy = CheckBox(grid, "Anche una copia in n&ero (PDF), con le lettere sotto ogni riga, per chi non legge il Braille", false);
 
         _from = Number(1, 1, 9999, "Da pagina");
         AddField(grid, "&Da pagina:", _from);

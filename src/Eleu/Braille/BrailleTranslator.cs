@@ -57,6 +57,35 @@ public static class BrailleTranslator
         }
     }
 
+    /// <summary>Braille cells (U+2800–U+283F) back to text, with the same table: for BRF files to edit.</summary>
+    public static string BackTranslate(string cells)
+    {
+        if (cells.Length == 0)
+            return "";
+
+        var input = cells.Select(c => (uint)c).ToArray();
+        int capacity = input.Length * 4 + 16;
+
+        lock (Block)
+        {
+            while (true)
+            {
+                var output = new uint[capacity];
+                int inputLength = input.Length;
+                int outputLength = output.Length;
+                int outcome = lou_backTranslateString(Table, input, ref inputLength, output, ref outputLength,
+                    IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
+                if (outcome == 0)
+                    throw new InvalidOperationException($"liblouis non è riuscito a leggere il Braille (tabella: {Table}).");
+                if (inputLength >= input.Length)
+                    return Encoding.UTF32.GetString(MemoryMarshal.AsBytes(output.AsSpan(0, outputLength)));
+                if (capacity > input.Length * 64)
+                    throw new InvalidOperationException("liblouis non ha letto tutto il Braille.");
+                capacity *= 2;
+            }
+        }
+    }
+
     /// <summary>Brings every value into the 6-dot cell range; anything else becomes an empty cell.</summary>
     private static char InCell(uint @value)
     {
@@ -82,5 +111,9 @@ public static class BrailleTranslator
 
     [DllImport("liblouis", CharSet = CharSet.Ansi)]
     private static extern int lou_translateString(string tables, uint[] input, ref int inputLength,
+        [Out] uint[] output, ref int outputLength, IntPtr characterKind, IntPtr spacing, int mode);
+
+    [DllImport("liblouis", CharSet = CharSet.Ansi)]
+    private static extern int lou_backTranslateString(string tables, uint[] input, ref int inputLength,
         [Out] uint[] output, ref int outputLength, IntPtr characterKind, IntPtr spacing, int mode);
 }
