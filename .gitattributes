@@ -2,5 +2,5 @@
 *.cs text eol=crlf
 *.csproj text eol=crlf
 *.slnx text eol=crlf
-# Le tabelle di liblouis restano byte per byte come nella distribuzione ufficiale.
+# The liblouis tables stay byte for byte as in the official distribution.
 src/Eleu/liblouis/** -text

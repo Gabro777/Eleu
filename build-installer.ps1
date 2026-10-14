@@ -1,23 +1,23 @@
-# Prepara l'installer di Eleu: pubblica il programma con .NET incluso (chi lo installa non deve installare altro)
-# e costruisce artifacts\Eleu-<versione>.msi con WiX 5 (strumento locale del progetto: dotnet tool restore).
-param([string]$Versione = "")
+# Builds the Eleu installer: publishes the program with .NET included (whoever installs it needs nothing else)
+# and builds artifacts\Eleu-<version>.msi with WiX 5 (a local tool of the project: dotnet tool restore).
+param([string]$Version = "")
 
 $ErrorActionPreference = "Stop"
-$radice = $PSScriptRoot
-if ($Versione -eq "") {
-    $Versione = ([xml](Get-Content "$radice\src\Eleu\Eleu.csproj")).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+$root = $PSScriptRoot
+if ($Version -eq "") {
+    $Version = ([xml](Get-Content "$root\src\Eleu\Eleu.csproj")).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
 }
-$publish = "$radice\artifacts\publish"
-$msi = "$radice\artifacts\Eleu-$Versione.msi"
+$publish = "$root\artifacts\publish"
+$msi = "$root\artifacts\Eleu-$Version.msi"
 
 if (Test-Path $publish) { Remove-Item $publish -Recurse -Force }
-dotnet publish "$radice\src\Eleu\Eleu.csproj" -c Release -r win-x64 --self-contained true -p:Version=$Versione -o $publish
-if ($LASTEXITCODE -ne 0) { throw "Pubblicazione non riuscita" }
-# I simboli di debug non servono a chi installa.
+dotnet publish "$root\src\Eleu\Eleu.csproj" -c Release -r win-x64 --self-contained true -p:Version=$Version -o $publish
+if ($LASTEXITCODE -ne 0) { throw "Publish failed" }
+# Debug symbols are not needed by whoever installs.
 Get-ChildItem $publish -Filter *.pdb | Remove-Item
 
 dotnet tool restore
-if ($LASTEXITCODE -ne 0) { throw "Ripristino degli strumenti non riuscito" }
-dotnet wix build "$radice\installer\Eleu.wxs" -arch x64 -d Versione=$Versione -bindpath Publish=$publish -o $msi
-if ($LASTEXITCODE -ne 0) { throw "Costruzione dell'installer non riuscita" }
+if ($LASTEXITCODE -ne 0) { throw "Tool restore failed" }
+dotnet wix build "$root\installer\Eleu.wxs" -arch x64 -d Version=$Version -bindpath Publish=$publish -o $msi
+if ($LASTEXITCODE -ne 0) { throw "Installer build failed" }
 Get-ChildItem $msi | Select-Object Name, @{ n = "MB"; e = { [math]::Round($_.Length / 1MB, 1) } }

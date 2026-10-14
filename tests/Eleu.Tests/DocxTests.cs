@@ -1,121 +1,122 @@
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 using DocumentFormat.OpenXml.Wordprocessing;
-using Eleu.Documento;
-using static Eleu.Tests.Supporto;
+using Eleu.Documents;
+using static Eleu.Tests.Support;
+using W= DocumentFormat.OpenXml.Wordprocessing;
 
 namespace Eleu.Tests;
 
 public class DocxTests
 {
     [Fact]
-    public void ScritturaELettura_ConservanoIlDocumento()
+    public void WriteAndRead_KeepTheDocument()
     {
-        var originale = Esempio();
-        using var flusso = new MemoryStream();
-        DocxFormato.Scrivi(originale, flusso);
-        flusso.Position = 0;
-        Assert.Equal(Descrivi(originale), Descrivi(DocxFormato.Leggi(flusso)));
+        var original = Sample();
+        using var stream = new MemoryStream();
+        DocxFormat.Write(original, stream);
+        stream.Position = 0;
+        Assert.Equal(Describe(original), Describe(DocxFormat.Read(stream)));
     }
 
     [Fact]
-    public void DocxScritto_RispettaLoSchemaOpenXml()
+    public void DocxWritten_FollowsTheOpenXmlSchema()
     {
-        using var flusso = new MemoryStream();
-        DocxFormato.Scrivi(Esempio(), flusso);
-        flusso.Position = 0;
-        using var documento = WordprocessingDocument.Open(flusso, false);
-        var errori = new OpenXmlValidator().Validate(documento).Select(e => $"{e.Path?.XPath}: {e.Description}");
-        Assert.Empty(errori);
+        using var stream = new MemoryStream();
+        DocxFormat.Write(Sample(), stream);
+        stream.Position = 0;
+        using var documents = WordprocessingDocument.Open(stream, false);
+        var errors = new OpenXmlValidator().Validate(documents).Select(e => $"{e.Path?.XPath}: {e.Description}");
+        Assert.Empty(errors);
     }
 
     [Fact]
-    public void TitoliRiconosciutiDalNomeDelloStile_AncheConIdItaliano()
+    public void HeadingsRecognizedFromStyleName_AlsoWithItalianId()
     {
-        // Word in italiano salva lo stile "heading 1" con id "Titolo1".
-        using var flusso = CreaDocx(corpo =>
+        // Word in Italian saves the "heading 1" style with id "Titolo1".
+        using var stream = CreateDocx(body =>
         {
-            corpo.Append(Paragrafo("Introduzione", stile: "Titolo1"));
-            corpo.Append(Paragrafo("Testo"));
-        }, stili: new Styles(new Style(new StyleName { Val = "heading 1" }) { StyleId = "Titolo1", Type = StyleValues.Paragraph }));
+            body.Append(Paragraph("Introduzione", style: "Titolo1"));
+            body.Append(Paragraph("Testo"));
+        }, styles: new Styles(new Style(new StyleName { Val = "heading 1" }) { StyleId = "Titolo1", Type = StyleValues.Paragraph }));
 
-        var contenuto = DocxFormato.Leggi(flusso);
-        Assert.Equal(1, contenuto.Paragrafi[0].LivelloTitolo);
-        Assert.Equal(0, contenuto.Paragrafi[1].LivelloTitolo);
+        var content = DocxFormat.Read(stream);
+        Assert.Equal(1, content.Paragraphs[0].HeadingLevel);
+        Assert.Equal(0, content.Paragraphs[1].HeadingLevel);
     }
 
     [Fact]
-    public void ElencoNumerato_RestaUnElencoNumerato()
+    public void NumberedList_StaysNumbered()
     {
-        var numerazione = new Numbering(
+        var numbering = new Numbering(
             new AbstractNum(new Level(new NumberingFormat { Val = NumberFormatValues.Decimal }) { LevelIndex = 0 }) { AbstractNumberId = 5 },
             new NumberingInstance(new AbstractNumId { Val = 5 }) { NumberID = 7 });
-        using var flusso = CreaDocx(corpo =>
+        using var stream = CreateDocx(body =>
         {
-            corpo.Append(Paragrafo("uova", numero: 7));
-            corpo.Append(Paragrafo("farina", numero: 7));
-        }, numerazione: numerazione);
+            body.Append(Paragraph("uova", number: 7));
+            body.Append(Paragraph("farina", number: 7));
+        }, numbering: numbering);
 
-        var contenuto = DocxFormato.Leggi(flusso);
-        Assert.Equal(["uova", "farina"], contenuto.Paragrafi.Select(p => p.Testo));
-        Assert.All(contenuto.Paragrafi, p => Assert.True(p.Numerato));
-        Assert.All(contenuto.Paragrafi, p => Assert.False(p.Elenco));
+        var content = DocxFormat.Read(stream);
+        Assert.Equal(["uova", "farina"], content.Paragraphs.Select(p => p.Text));
+        Assert.All(content.Paragraphs, p => Assert.True(p.Numbered));
+        Assert.All(content.Paragraphs, p => Assert.False(p.Bulleted));
     }
 
     [Fact]
-    public void AcapoManuale_DiventaNuovoParagrafo()
+    public void ManualLineBreak_BecomesNewParagraph()
     {
-        using var flusso = CreaDocx(corpo =>
-            corpo.Append(new Paragraph(new Run(new Text("prima riga"), new Break(), new Text("seconda riga")))));
-        Assert.Equal(["prima riga", "seconda riga"], DocxFormato.Leggi(flusso).Paragrafi.Select(p => p.Testo));
+        using var stream = CreateDocx(body =>
+            body.Append(new W.Paragraph(new Run(new Text("prima riga"), new Break(), new Text("seconda riga")))));
+        Assert.Equal(["prima riga", "seconda riga"], DocxFormat.Read(stream).Paragraphs.Select(p => p.Text));
     }
 
     [Fact]
-    public void CelleUniteSegnalateComeNonConservate()
+    public void MergedCellsReportedAsNotPreserved()
     {
-        using var flusso = CreaDocx(corpo =>
-            corpo.Append(new Table(new TableRow(new TableCell(
-                new TableCellProperties(new GridSpan { Val = 2 }), new Paragraph(new Run(new Text("cella"))))))));
-        var contenuto = DocxFormato.Leggi(flusso);
-        Assert.Equal(["celle unite o tabelle dentro le tabelle"], contenuto.ElementiNonConservati);
-        Assert.Equal("cella", contenuto.Paragrafi[0].Testo);
-        Assert.Equal(new PosizioneCella(0, 0, 0), contenuto.Paragrafi[0].Cella);
+        using var stream = CreateDocx(body =>
+            body.Append(new Table(new TableRow(new TableCell(
+                new TableCellProperties(new GridSpan { Val = 2 }), new W.Paragraph(new Run(new Text("cella"))))))));
+        var content = DocxFormat.Read(stream);
+        Assert.Equal(["celle unite o tabelle dentro le tabelle"], content.NotPreserved);
+        Assert.Equal("cella", content.Paragraphs[0].Text);
+        Assert.Equal(new CellPosition(0, 0, 0), content.Paragraphs[0].Cell);
     }
 
     [Fact]
-    public void DocumentoSemplice_NienteDaSegnalare()
+    public void SimpleDocument_NothingToReport()
     {
-        using var flusso = new MemoryStream();
-        DocxFormato.Scrivi(Esempio(), flusso);
-        flusso.Position = 0;
-        Assert.Empty(DocxFormato.Leggi(flusso).ElementiNonConservati);
+        using var stream = new MemoryStream();
+        DocxFormat.Write(Sample(), stream);
+        stream.Position = 0;
+        Assert.Empty(DocxFormat.Read(stream).NotPreserved);
     }
 
-    private static Paragraph Paragrafo(string testo, string? stile = null, int? numero = null)
+    private static W.Paragraph Paragraph(string text, string? style = null, int? number = null)
     {
-        var proprieta = new ParagraphProperties();
-        if (stile is not null)
-            proprieta.Append(new ParagraphStyleId { Val = stile });
-        if (numero is int n)
-            proprieta.Append(new NumberingProperties(new NumberingLevelReference { Val = 0 }, new NumberingId { Val = n }));
-        return new Paragraph(proprieta, new Run(new Text(testo)));
+        var properties = new ParagraphProperties();
+        if (style is not null)
+            properties.Append(new ParagraphStyleId { Val = style });
+        if (number is int n)
+            properties.Append(new NumberingProperties(new NumberingLevelReference { Val = 0 }, new NumberingId { Val = n }));
+        return new W.Paragraph(properties, new Run(new Text(text)));
     }
 
-    private static MemoryStream CreaDocx(Action<Body> riempi, Styles? stili = null, Numbering? numerazione = null)
+    private static MemoryStream CreateDocx(Action<Body> fill, Styles? styles = null, Numbering? numbering = null)
     {
-        var flusso = new MemoryStream();
-        using (var documento = WordprocessingDocument.Create(flusso, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+        var stream = new MemoryStream();
+        using (var documents = WordprocessingDocument.Create(stream, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
         {
-            var principale = documento.AddMainDocumentPart();
-            var corpo = new Body();
-            principale.Document = new Document(corpo);
-            riempi(corpo);
-            if (stili is not null)
-                principale.AddNewPart<StyleDefinitionsPart>().Styles = stili;
-            if (numerazione is not null)
-                principale.AddNewPart<NumberingDefinitionsPart>().Numbering = numerazione;
+            var main = documents.AddMainDocumentPart();
+            var body = new Body();
+            main.Document = new Document(body);
+            fill(body);
+            if (styles is not null)
+                main.AddNewPart<StyleDefinitionsPart>().Styles = styles;
+            if (numbering is not null)
+                main.AddNewPart<NumberingDefinitionsPart>().Numbering = numbering;
         }
-        flusso.Position = 0;
-        return flusso;
+        stream.Position = 0;
+        return stream;
     }
 }

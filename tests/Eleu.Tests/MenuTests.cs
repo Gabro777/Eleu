@@ -1,159 +1,194 @@
-using static Eleu.Tests.Supporto;
+using static Eleu.Tests.Support;
 
 namespace Eleu.Tests;
 
 public class MenuTests
 {
     /// <summary>
-    /// Chi usa la tastiera apre i menu con Alt+lettera: due voci con la stessa lettera nello stesso menu
-    /// non si raggiungono direttamente, e due comandi con la stessa scorciatoia si contendono il tasto.
+    /// Keyboard users open the menus with Alt+letter: two items with the same letter in the same menu
+    /// cannot be reached directly, and two commands with the same shortcut fight over the key.
     /// </summary>
     [Fact]
-    public void Menu_SenzaLettereNeScorciatoieDoppie()
+    public void Menu_NoDuplicateAccessKeysOrShortcuts()
     {
-        var problemi = new List<string>();
-        EseguiSta(() =>
+        var problems = new List<string>();
+        RunSta(() =>
         {
-            using var finestra = new FinestraPrincipale();
-            var scorciatoie = new Dictionary<Keys, string>();
-            Controlla(finestra.MainMenuStrip!.Items, "barra dei menu");
+            using var window = new MainWindow();
+            var shortcuts = new Dictionary<Keys, string>();
+            Check(window.MainMenuStrip!.Items, "barra dei menu");
 
-            void Controlla(ToolStripItemCollection voci, string menu)
+            void Check(ToolStripItemCollection items, string menu)
             {
-                var lettere = new Dictionary<char, string>();
-                foreach (var voce in voci.OfType<ToolStripMenuItem>())
+                var letters = new Dictionary<char, string>();
+                foreach (var item in items.OfType<ToolStripMenuItem>())
                 {
-                    var testo = voce.Text ?? "";
-                    int e = testo.IndexOf('&');
-                    if (e >= 0 && e + 1 < testo.Length)
+                    var text = item.Text ?? "";
+                    int e = text.IndexOf('&');
+                    if (e >= 0 && e + 1 < text.Length)
                     {
-                        char lettera = char.ToLowerInvariant(testo[e + 1]);
-                        if (!lettere.TryAdd(lettera, testo))
-                            problemi.Add($"{menu}: la lettera '{lettera}' è sia in \"{lettere[lettera]}\" sia in \"{testo}\"");
+                        char letter = char.ToLowerInvariant(text[e + 1]);
+                        if (!letters.TryAdd(letter, text))
+                            problems.Add($"{menu}: la lettera '{letter}' è sia in \"{letters[letter]}\" sia in \"{text}\"");
                     }
-                    else if (voce.Enabled)
+                    else if (item.Enabled)
                     {
-                        problemi.Add($"{menu}: \"{testo}\" non ha una lettera di scelta rapida");
+                        problems.Add($"{menu}: \"{text}\" non ha una lettera di scelta rapida");
                     }
 
-                    if (voce.ShortcutKeys != Keys.None && !scorciatoie.TryAdd(voce.ShortcutKeys, testo))
-                        problemi.Add($"la scorciatoia {voce.ShortcutKeys} è sia in \"{scorciatoie[voce.ShortcutKeys]}\" sia in \"{testo}\"");
+                    if (item.ShortcutKeys != Keys.None && !shortcuts.TryAdd(item.ShortcutKeys, text))
+                        problems.Add($"la scorciatoia {item.ShortcutKeys} è sia in \"{shortcuts[item.ShortcutKeys]}\" sia in \"{text}\"");
 
-                    Controlla(voce.DropDownItems, testo.Replace("&", ""));
+                    Check(item.DropDownItems, text.Replace("&", ""));
                 }
             }
         });
-        Assert.Empty(problemi);
+        Assert.Empty(problems);
     }
 
-    /// <summary>Il documento ha il menu contestuale (tasto Applicazioni), con i comandi base e lettere tutte diverse.</summary>
+    /// <summary>The document has the context menu (Applications key), with the basic commands and all different letters.</summary>
     [Fact]
-    public void MenuContestuale_ComandiBaseSenzaLettereDoppie()
+    public void ContextMenu_BasicCommandsWithoutDuplicateAccessKeys()
     {
-        List<string> voci = [];
-        EseguiSta(() =>
+        List<string> items = [];
+        RunSta(() =>
         {
-            using var finestra = new FinestraPrincipale();
-            var documento = finestra.Controls.OfType<Editor.CampoTesto>().Single();
-            var menu = documento.ContextMenuStrip!;
+            using var window = new MainWindow();
+            var documents = window.Controls.OfType<Editor.DocumentTextBox>().Single();
+            var menu = documents.ContextMenuStrip!;
             menu.Show(Point.Empty);
-            voci = [.. menu.Items.OfType<ToolStripMenuItem>().Select(v => v.Text!)];
+            items = [.. menu.Items.OfType<ToolStripMenuItem>().Select(v => v.Text!)];
             menu.Close();
         });
-        Assert.Contains("&Copia", voci);
-        Assert.Contains("&Incolla", voci);
-        var lettere = voci.Where(v => v.Contains('&')).Select(v => char.ToLowerInvariant(v[v.IndexOf('&') + 1])).ToList();
-        Assert.Equal(lettere.Count, lettere.Distinct().Count());
+        Assert.Contains("&Copia", items);
+        Assert.Contains("&Incolla", items);
+        var letters = items.Where(v => v.Contains('&')).Select(v => char.ToLowerInvariant(v[v.IndexOf('&') + 1])).ToList();
+        Assert.Equal(letters.Count, letters.Distinct().Count());
     }
 
     [Fact]
-    public void Finestre_SenzaLettereDoppie()
+    public void Dialogs_NoDuplicateAccessKeys()
     {
-        var problemi = new List<string>();
-        EseguiSta(() =>
+        var problems = new List<string>();
+        RunSta(() =>
         {
-            foreach (var finestra in TutteLeFinestre())
+            foreach (var window in AllWindows())
             {
-                var lettere = new Dictionary<char, string>();
-                foreach (var controllo in Tutti(finestra))
+                var letters = new Dictionary<char, string>();
+                foreach (var control in All(window))
                 {
-                    var testo = controllo.Text ?? "";
-                    int e = testo.IndexOf('&');
-                    if (e < 0 || e + 1 >= testo.Length || controllo is ComboBox or TextBox or NumericUpDown)
+                    var text = control.Text ?? "";
+                    int e = text.IndexOf('&');
+                    if (e < 0 || e + 1 >= text.Length || control is ComboBox or TextBox or NumericUpDown)
                         continue;
-                    char lettera = char.ToLowerInvariant(testo[e + 1]);
-                    if (!lettere.TryAdd(lettera, testo))
-                        problemi.Add($"{finestra.Text}: la lettera '{lettera}' è sia in \"{lettere[lettera]}\" sia in \"{testo}\"");
+                    char letter = char.ToLowerInvariant(text[e + 1]);
+                    if (!letters.TryAdd(letter, text))
+                        problems.Add($"{window.Text}: la lettera '{letter}' è sia in \"{letters[letter]}\" sia in \"{text}\"");
                 }
-                finestra.Dispose();
+                window.Dispose();
             }
         });
-        Assert.Empty(problemi);
+        Assert.Empty(problems);
     }
 
     /// <summary>
-    /// Lo screen reader legge un nome per ogni controllo raggiungibile con Tab, e ogni finestra si chiude con Esc
-    /// (un pulsante Annulla o Chiudi come CancelButton).
+    /// The screen reader reads a name for every control reachable with Tab, and every window closes with Esc
+    /// (a Cancel or Close button as CancelButton).
     /// </summary>
     [Fact]
-    public void Finestre_OgniControlloHaUnNomeEEscChiude()
+    public void Dialogs_EveryControlHasANameAndEscCloses()
     {
-        var problemi = new List<string>();
-        EseguiSta(() =>
+        var problems = new List<string>();
+        RunSta(() =>
         {
-            foreach (var finestra in TutteLeFinestre())
+            foreach (var window in AllWindows())
             {
-                finestra.ShowInTaskbar = false;
-                finestra.StartPosition = FormStartPosition.Manual;
-                finestra.Location = new Point(-5000, -5000);
-                finestra.Show();
+                window.ShowInTaskbar = false;
+                window.StartPosition = FormStartPosition.Manual;
+                window.Location = new Point(-5000, -5000);
+                window.Show();
                 Application.DoEvents();
-                foreach (var controllo in Tutti(finestra).Where(c => c.Visible && c.CanSelect && c.TabStop))
+                foreach (var control in All(window).Where(c => c.Visible && c.CanSelect && c.TabStop))
                 {
-                    var nome = controllo.AccessibilityObject.Name;
-                    if (string.IsNullOrWhiteSpace(nome))
-                        problemi.Add($"{finestra.Text}: {controllo.GetType().Name} \"{controllo.Text}\" senza nome");
+                    var name = control.AccessibilityObject.Name;
+                    if (string.IsNullOrWhiteSpace(name))
+                        problems.Add($"{window.Text}: {control.GetType().Name} \"{control.Text}\" senza nome");
                 }
-                if (finestra.CancelButton is null)
-                    problemi.Add($"{finestra.Text}: Esc non la chiude");
-                finestra.Close();
-                finestra.Dispose();
+                if (window.CancelButton is null)
+                    problems.Add($"{window.Text}: Esc non la chiude");
+                window.Close();
+                window.Dispose();
             }
         });
-        Assert.True(problemi.Count == 0, string.Join(Environment.NewLine, problemi));
+        Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
 
-    private static Form[] TutteLeFinestre() =>
+    private static Form[] AllWindows() =>
     [
-        new Interfaccia.FinestraCarattere(new Editor.FormatoCarattere(), ["Arial", "Segoe UI"]),
-        new Interfaccia.FinestraParagrafo(new Editor.FormatoParagrafo()),
-        new Interfaccia.FinestraTrova(true, "", "", new Documento.OpzioniRicerca()),
-        new Interfaccia.FinestraVoce([], null, new Voce.ParametriVoce()),
-        new Interfaccia.FinestraBraille([], null, new Braille.FormatoPagina(), _ => 1),
-        new Interfaccia.FinestraPagina(new Documento.ImpostazioniPagina()),
-        new Interfaccia.FinestraStampa(["Stampante"], null, 3),
-        new Interfaccia.FinestraVaiA(0, 1),
-        new FinestraLivello(1),
-        new FinestraNome("Aggiungi segnalibro", "&Nome:", ""),
-        new FinestraNota("Aggiungi nota", ""),
-        new FinestraTabella(),
-        new FinestraLarghezza(1, 4),
-        new FinestraImmagine("Aggiungi immagine", Documento.Immagini.DaDati(ImmaginiTests.Bitmap(System.Drawing.Imaging.ImageFormat.Png), "")),
-        new Interfaccia.FinestraOrtografia(),
-        new Interfaccia.FinestraDizionario(["Eleu"]),
-        new Interfaccia.FinestraPulizia(new Correzione.OpzioniPulizia(), true),
-        new Interfaccia.FinestraSostituzioni([new("a", "b")], true),
-        new Interfaccia.FinestraPronunce([new("NVDA", "enne vu di a")]),
-        new Interfaccia.FinestraInformazioni("1.0.0"),
-        new FinestraProprieta(new Documento.Metadati("Titolo", "Autore"), null, "10 parole"),
-        new Interfaccia.FinestraElenco("Segnalibri", ["Nome", "Riga"], [new(["inizio", "1"], 0)]),
-        new Interfaccia.FinestraTesto("Scorciatoie da tastiera", "Ctrl+N: nuovo"),
-        new Interfaccia.FinestraOpzioni(new Impostazioni()),
-        new Interfaccia.FinestraSimboli(),
-        new Interfaccia.FinestraAggiornamento(Aggiornamenti.DaJson("""{"tag_name":"v9.0.0","body":"- novità","assets":[{"name":"a.msi","browser_download_url":"x"}]}""")!, new Version(1, 0, 0), installabile: true),
-        new Interfaccia.FinestraGraficaTattile(new System.Drawing.Bitmap(50, 50), "Prova", ["Stampante"], null, 32, 27, _ => null),
+        new UI.CharacterDialog(new Editor.CharacterFormat(), ["Arial", "Segoe UI"]),
+        new UI.ParagraphDialog(new Editor.ParagraphFormat()),
+        new UI.FindDialog(true, "", "", new Documents.SearchOptions()),
+        new UI.VoiceDialog([], null, new Speech.VoiceParameters()),
+        new UI.BrailleDialog([], null, new Braille.PageFormat(), _ => 1),
+        new UI.PageDialog(new Documents.PageLayout()),
+        new UI.PrintOptionsDialog(["Stampante"], null, 3),
+        new UI.GoToDialog(0, 1),
+        new HeadingLevelDialog(1),
+        new NameDialog("Aggiungi segnalibro", "&Nome:", ""),
+        new FootnoteDialog("Aggiungi nota", ""),
+        new TableDialog(),
+        new ColumnWidthDialog(1, 4),
+        new ImageDialog("Aggiungi immagine", Documents.Images.FromData(ImagesTests.Bitmap(System.Drawing.Imaging.ImageFormat.Png), "")),
+        new UI.SpellingDialog(),
+        new UI.DictionaryDialog(["Eleu"]),
+        new UI.CleanupDialog(new Proofing.CleanupOptions(), true),
+        new UI.ReplacementsDialog([new("a", "b")], true),
+        new UI.PronunciationsDialog([new("NVDA", "enne vu di a")]),
+        new UI.AboutDialog("1.0.0"),
+        new PropertiesDialog(new Documents.Metadata("Titolo", "Autore"), null, "10 parole"),
+        new UI.ListDialog("Segnalibri", ["Nome", "Riga"], [new(["inizio", "1"], 0)]),
+        new UI.TextDialog("Scorciatoie da tastiera", "Ctrl+N: nuovo"),
+        new UI.OptionsDialog(new Settings()),
+        new UI.SymbolsDialog(),
+        new UI.ScanDialog([new("a", "Scanner A", true, false), new("b", "Scanner B", true, true)]),
+        new UI.UpdateDialog(Updates.FromJson("""{"tag_name":"v9.0.0","body":"- novità","assets":[{"name":"a.msi","browser_download_url":"x"}]}""")!, new Version(1, 0, 0), installable: true),
+        new UI.TactileGraphicsDialog(new System.Drawing.Bitmap(50, 50), "Prova", ["Stampante"], null, 32, 27, _ => null),
     ];
 
-    private static IEnumerable<Control> Tutti(Control radice) =>
-        radice.Controls.Cast<Control>().SelectMany(c => Tutti(c).Prepend(c));
+    /// <summary>
+    /// Bold with no selection changes neither text nor selection: the Bold button must still light up right away,
+    /// not only when the next character is typed.
+    /// </summary>
+    [Fact]
+    public void Bold_WithoutSelection_ButtonLitRightAway()
+    {
+        bool before = true, after = false;
+        RunSta(() =>
+        {
+            using var window = new MainWindow();
+            window.Show();
+            var bar = All(window).OfType<UI.ButtonBar>().Single();
+            bar.Visible = true;
+            var text = All(window).OfType<Editor.DocumentTextBox>().Single();
+            text.Focus();
+            text.SelectedText = "Ciao ";
+            Application.DoEvents();
+            var button = bar.Items.OfType<ToolStripButton>().Single(b => b.Text == "Grassetto");
+            before = button.Checked;
+
+            var item = Items(window.MainMenuStrip!.Items).Single(i => i.Text == "&Grassetto");
+            item.PerformClick();
+            for (int i = 0; i < 5; i++)
+                Application.DoEvents();
+            after = button.Checked;
+        });
+        Assert.False(before);
+        Assert.True(after);
+
+        static IEnumerable<ToolStripMenuItem> Items(ToolStripItemCollection items) =>
+            items.OfType<ToolStripMenuItem>().SelectMany(i => Items(i.DropDownItems).Prepend(i));
+    }
+
+    private static IEnumerable<Control> All(Control root) =>
+        root.Controls.Cast<Control>().SelectMany(c => All(c).Prepend(c));
 }

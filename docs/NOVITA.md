@@ -1,11 +1,11 @@
-# Eleu 1.1.2
+# Eleu 1.2.0
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.1.2.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.2.0.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -14,8 +14,9 @@ per la voce, almeno una voce di Windows.
 
 ## Cosa sa fare
 
-- **Documenti**: apre e salva Word (DOCX), LibreOffice (ODT), RTF, testo, HTML ed EPUB; legge PDF e foto di pagine
-  scritte. Titoli, elenchi, tabelle, note a piè di pagina, segnalibri, commenti, immagini con la descrizione.
+- **Documenti**: apre e salva Word (DOCX), LibreOffice (ODT), RTF, testo, HTML ed EPUB; legge PDF, foto di pagine
+  scritte e fogli di carta direttamente dallo scanner. Titoli, elenchi, tabelle, note a piè di pagina, segnalibri,
+  commenti, immagini con la descrizione.
 - **Scrivere e correggere**: controllo ortografico e della punteggiatura (F7), menu contestuale con le correzioni,
   trova e sostituisci, selezione a blocchi (F8), simboli, ricerca della parola sul web, statistiche.
 - **Orientarsi**: Eleu dice sempre cosa ha fatto; segnali sonori brevi su titoli, segnalibri, note, commenti e parole
@@ -28,12 +29,20 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
-- Alcune voci dei menu hanno nomi più chiari (per esempio File, Salva come Braille; Inserisci, Elenco dei segnalibri;
-  Strumenti, Dettagli del punto in cui sei). Le scorciatoie da tastiera sono rimaste le stesse.
-- Nella stampa Braille: interlinea doppia, fronte e retro con margine e numero di pagina dalla parte giusta, due
-  righe libere a metà pagina.
+- **Acquisire da scanner** (Ctrl+Alt+S, oppure File, Acquisisci da scanner): Eleu comanda lo scanner, riconosce il
+  testo e lo apre come documento nuovo, pronto da correggere e da stampare in Braille. Si sceglie lo scanner e dove
+  sono i fogli: sul vetro, una pagina alla volta (dopo ogni pagina Eleu chiede se ce n'è un'altra), oppure
+  nell'alimentatore, tutte insieme. Funziona con gli scanner e le stampanti multifunzione che hanno il driver per
+  Windows, senza programmi da installare.
+- Premendo Grassetto, Corsivo o Sottolineato prima di scrivere, il pulsante nella barra si accende subito, non solo
+  dopo il primo carattere. Lo stesso per la barra di stato.
+- Il codice del programma ora è in inglese, come nella maggior parte dei progetti liberi: chi vuole contribuire lo
+  legge più facilmente. Per chi usa Eleu non cambia nulla, e le impostazioni restano quelle di prima.
 
 ## Da sapere
+
+- L'acquisizione da scanner è nuova e finora è stata provata senza uno scanner vero: se il tuo scanner non viene
+  trovato o qualcosa non va, segnalalo indicando il modello.
 
 - La stampa Braille diretta e la carta a microcapsule sono da provare con stampanti diverse: se qualcosa non torna,
   segnalalo indicando il modello della stampante.

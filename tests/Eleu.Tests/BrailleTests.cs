@@ -4,91 +4,91 @@ namespace Eleu.Tests;
 
 public class BrailleTests
 {
-    /// <summary>Celle scritte come numeri dei punti separati da trattini; 0 = cella vuota. Es. "46-14" = maiuscola, c.</summary>
-    private static string Punti(string celle) =>
-        string.Concat(celle.Split('-').Select(c => (char)(0x2800 + c.Where(char.IsAsciiDigit).Sum(p => p == '0' ? 0 : 1 << (p - '1')))));
+    /// <summary>Cells written as dot numbers separated by dashes; 0 = empty cell. E.g. "46-14" = capital, c.</summary>
+    private static string Points(string cells) =>
+        string.Concat(cells.Split('-').Select(c => (char)(0x2800 + c.Where(char.IsAsciiDigit).Sum(p => p == '0' ? 0 : 1 << (p - '1')))));
 
     [Fact]
-    public void Punti_NotazioneDiProva()
+    public void Points_TestNotation()
     {
-        Assert.Equal((char)0x2801, Punti("1")[0]);
-        Assert.Equal((char)0x283F, Punti("123456")[0]);
-        Assert.Equal(TraduttoreBraille.CellaVuota, Punti("0")[0]);
+        Assert.Equal((char)0x2801, Points("1")[0]);
+        Assert.Equal((char)0x283F, Points("123456")[0]);
+        Assert.Equal(BrailleTranslator.EmptyCell, Points("0")[0]);
     }
 
     [Fact]
-    public void Traduce_MaiuscoleELettereAccentate()
+    public void Translates_CapitalsAndAccentedLetters()
     {
-        // ⠨ maiuscola, c i t t à, spazio, è, spazio, b e l l a
-        Assert.Equal(Punti("46-14-24-2345-2345-12356-0-2346-0-12-15-123-123-1"), TraduttoreBraille.Traduci("Città è bella"));
+        // ⠨ capital, c i t t à, space, è, space, b e l l a
+        Assert.Equal(Points("46-14-24-2345-2345-12356-0-2346-0-12-15-123-123-1"), BrailleTranslator.Translate("Città è bella"));
     }
 
     [Fact]
-    public void Traduce_NumeriEPunteggiatura()
+    public void Translates_NumbersAndPunctuation()
     {
-        // h o, spazio, segnanumero 1 2, spazio, k g punto
-        Assert.Equal(Punti("125-135-0-3456-1-12-0-13-1245-256"), TraduttoreBraille.Traduci("ho 12 kg."));
+        // h o, space, number sign 1 2, space, k g period
+        Assert.Equal(Points("125-135-0-3456-1-12-0-13-1245-256"), BrailleTranslator.Translate("ho 12 kg."));
     }
 
     [Fact]
-    public void TestoLungo_TradottoTutto()
+    public void LongText_FullyTranslated()
     {
-        var testo = string.Concat(Enumerable.Repeat("casa ", 3000)).TrimEnd();
-        var braille = TraduttoreBraille.Traduci(testo);
-        Assert.Equal(testo.Length, braille.Length);
-        Assert.Equal(Punti("14-1-234-1"), braille[^4..]);
+        var text = string.Concat(Enumerable.Repeat("casa ", 3000)).TrimEnd();
+        var braille = BrailleTranslator.Translate(text);
+        Assert.Equal(text.Length, braille.Length);
+        Assert.Equal(Points("14-1-234-1"), braille[^4..]);
     }
 
     [Fact]
-    public void Impagina_VaACapoTraLeParoleConRientro()
+    public void Paginate_WrapsBetweenWordsWithIndent()
     {
-        var celle = Punti("1-1-1-0-12-12-12-0-14-14-14-0-145-145-145");
-        var pagine = Impaginatore.Impagina([new ParagrafoBraille(celle)], new FormatoPagina(CellePerRiga: 9, RighePerPagina: 20));
+        var cells = Points("1-1-1-0-12-12-12-0-14-14-14-0-145-145-145");
+        var pages = Paginator.Paginate([new BrailleParagraph(cells)], new PageFormat(CellsPerLine: 9, LinesPerPage: 20));
 
-        var righe = Assert.Single(pagine);
-        Assert.Equal([Punti("0-0-1-1-1-0-12-12-12"), Punti("14-14-14-0-145-145-145")], righe);
-        Assert.All(righe, r => Assert.True(r.Length <= 9));
+        var rows = Assert.Single(pages);
+        Assert.Equal([Points("0-0-1-1-1-0-12-12-12"), Points("14-14-14-0-145-145-145")], rows);
+        Assert.All(rows, r => Assert.True(r.Length <= 9));
     }
 
     [Fact]
-    public void Impagina_TitoloSenzaRientroConRigaVuotaPrima()
+    public void Paginate_HeadingWithoutIndentAndBlankLineBefore()
     {
-        var pagine = Impaginatore.Impagina(
-            [new ParagrafoBraille(Punti("1")), new ParagrafoBraille(Punti("12"), Titolo: true), new ParagrafoBraille(Punti("14"))],
-            new FormatoPagina(20, 20));
-        Assert.Equal([Punti("0-0-1"), "", Punti("12"), Punti("0-0-14")], pagine[0]);
+        var pages = Paginator.Paginate(
+            [new BrailleParagraph(Points("1")), new BrailleParagraph(Points("12"), IsHeading: true), new BrailleParagraph(Points("14"))],
+            new PageFormat(20, 20));
+        Assert.Equal([Points("0-0-1"), "", Points("12"), Points("0-0-14")], pages[0]);
     }
 
     [Fact]
-    public void Impagina_DivideInPagineESpezzaLeParoleTroppoLunghe()
+    public void Paginate_SplitsIntoPagesAndBreaksTooLongWords()
     {
-        var parolaLunga = Punti(string.Join("-", Enumerable.Repeat("1", 25)));
-        var pagine = Impaginatore.Impagina([new ParagrafoBraille(parolaLunga)], new FormatoPagina(CellePerRiga: 10, RighePerPagina: 2));
+        var longWord = Points(string.Join("-", Enumerable.Repeat("1", 25)));
+        var pages = Paginator.Paginate([new BrailleParagraph(longWord)], new PageFormat(CellsPerLine: 10, LinesPerPage: 2));
 
-        Assert.Equal(2, pagine.Count);
-        Assert.Equal([10, 10], pagine[0].Select(r => r.Length));
-        Assert.Equal([7], pagine[1].Select(r => r.Length)); // 2 di rientro + 8 + 10 + 7 = 25 celle
+        Assert.Equal(2, pages.Count);
+        Assert.Equal([10, 10], pages[0].Select(r => r.Length));
+        Assert.Equal([7], pages[1].Select(r => r.Length)); // 2 of indent + 8 + 10 + 7 = 25 cells
     }
 
     [Fact]
-    public void Brf_TabellaAsciiStandard()
+    public void Brf_StandardAsciiTable()
     {
-        Assert.Equal(64, FormatoBrf.TabellaAscii.Length);
-        Assert.Equal(' ', FormatoBrf.InAscii(Punti("0")[0]));
-        Assert.Equal('A', FormatoBrf.InAscii(Punti("1")[0]));
-        Assert.Equal('B', FormatoBrf.InAscii(Punti("12")[0]));
-        Assert.Equal('L', FormatoBrf.InAscii(Punti("123")[0]));
-        Assert.Equal('#', FormatoBrf.InAscii(Punti("3456")[0]));
-        Assert.Equal('.', FormatoBrf.InAscii(Punti("46")[0]));
-        Assert.Equal('4', FormatoBrf.InAscii(Punti("256")[0]));
-        Assert.Equal('\\', FormatoBrf.InAscii(Punti("1256")[0]));
-        Assert.Equal('=', FormatoBrf.InAscii(Punti("123456")[0]));
+        Assert.Equal(64, BrfFormat.AsciiTable.Length);
+        Assert.Equal(' ', BrfFormat.ToAscii(Points("0")[0]));
+        Assert.Equal('A', BrfFormat.ToAscii(Points("1")[0]));
+        Assert.Equal('B', BrfFormat.ToAscii(Points("12")[0]));
+        Assert.Equal('L', BrfFormat.ToAscii(Points("123")[0]));
+        Assert.Equal('#', BrfFormat.ToAscii(Points("3456")[0]));
+        Assert.Equal('.', BrfFormat.ToAscii(Points("46")[0]));
+        Assert.Equal('4', BrfFormat.ToAscii(Points("256")[0]));
+        Assert.Equal('\\', BrfFormat.ToAscii(Points("1256")[0]));
+        Assert.Equal('=', BrfFormat.ToAscii(Points("123456")[0]));
     }
 
     [Fact]
-    public void Brf_RigheEPagine()
+    public void Brf_LinesAndPages()
     {
-        var pagine = new List<List<string>> { new() { Punti("1-12"), Punti("14") }, new() { Punti("145") } };
-        Assert.Equal("AB\r\nC\r\n\fD\r\n\f", FormatoBrf.Testo(pagine));
+        var pages = new List<List<string>> { new() { Points("1-12"), Points("14") }, new() { Points("145") } };
+        Assert.Equal("AB\r\nC\r\n\fD\r\n\f", BrfFormat.Text(pages));
     }
 }

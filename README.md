@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/icona.png" alt="Icona di Eleu: un foglio bianco su sfondo blu con la lettera e in Braille: i punti 1 e 5 in rilievo, neri" width="128" height="128">
+  <img src="docs/icon.png" alt="Icona di Eleu: un foglio bianco su sfondo blu con la lettera e in Braille: i punti 1 e 5 in rilievo, neri" width="128" height="128">
 </p>
 
 <h1 align="center">Eleu</h1>
@@ -31,7 +31,8 @@ Eleu è un programma per scrivere, leggere e stampare documenti, fatto per chi u
 - **Il Braille al centro, non in aggiunta.** File BRF, stampa Braille, scrittura a sei tasti, perfino le immagini in
   rilievo.
 - **Per chi vede poco** ci sono testo ingrandibile, pulsanti grandi con il nome scritto e il righello.
-- **Apre i documenti di tutti i giorni**: Word, LibreOffice, PDF, pagine web, libri EPUB, foto di pagine scritte.
+- **Apre i documenti di tutti i giorni**: Word, LibreOffice, PDF, pagine web, libri EPUB, foto di pagine scritte; legge
+  i fogli di carta direttamente dallo scanner.
 
 Eleu è **gratuito** e lo resterà: è software libero con licenza GNU GPL 3.
 
@@ -72,7 +73,8 @@ Una volta installato, l'avviso non ricompare.
 
 - Apre e salva documenti **Word (DOCX)**, **LibreOffice (ODT)**, **RTF**, **testo semplice**, **pagine web (HTML)** e
   **libri EPUB**.
-- Legge i **PDF** e le **foto o scansioni di pagine scritte**, con il riconoscimento dei caratteri di Windows.
+- Legge i **PDF** e le **foto o scansioni di pagine scritte**, con il riconoscimento dei caratteri di Windows, e
+  **acquisisce direttamente dallo scanner** (Ctrl+Alt+S): una pagina alla volta dal vetro o tutte dall'alimentatore.
 - Carattere, paragrafo, titoli su nove livelli, elenchi, interruzioni di pagina, intestazione e piè di pagina.
 - **Controllo ortografico e della punteggiatura**: F7 porta al prossimo errore, Ctrl+F7 lo corregge, il tasto
   Applicazioni sulla parola sbagliata propone le correzioni. Dizionario personale.

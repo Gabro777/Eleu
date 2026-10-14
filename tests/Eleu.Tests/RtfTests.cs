@@ -1,90 +1,90 @@
-using Eleu.Documento;
+using Eleu.Documents;
 using Eleu.Editor;
-using static Eleu.Tests.Supporto;
+using static Eleu.Tests.Support;
 
 namespace Eleu.Tests;
 
 public class RtfTests
 {
     [Fact]
-    public void ScritturaELettura_ConservanoIlDocumento()
+    public void WriteAndRead_KeepTheDocument()
     {
-        var originale = Esempio();
-        var riletto = RtfLettore.Leggi(RtfScrittore.Scrivi(originale));
-        Assert.Equal(Descrivi(originale), Descrivi(riletto));
+        var original = Sample();
+        var reread = RtfReader.Read(RtfWriter.Write(original));
+        Assert.Equal(Describe(original), Describe(reread));
     }
 
     [Fact]
-    public void PassaggioNelCampoDiTesto_ConservaIlDocumento()
+    public void PassingThroughTheTextBox_KeepsTheDocument()
     {
-        // Il percorso reale: DOCX → modello → RTF → RichEdit → RTF di RichEdit → modello → DOCX.
-        var originale = Esempio();
-        string rtfDelCampo = "";
-        EseguiSta(() =>
+        // The real path: DOCX → model → RTF → RichEdit → RichEdit's RTF → model → DOCX.
+        var original = Sample();
+        string fieldRtf = "";
+        RunSta(() =>
         {
-            using var campo = new RichTextBox();
-            campo.CreateControl();
-            campo.Rtf = RtfScrittore.Scrivi(originale);
-            rtfDelCampo = campo.Rtf!;
+            using var field = new RichTextBox();
+            field.CreateControl();
+            field.Rtf = RtfWriter.Write(original);
+            fieldRtf = field.Rtf!;
         });
-        Assert.Equal(Descrivi(originale), Descrivi(RtfLettore.Leggi(rtfDelCampo)));
+        Assert.Equal(Describe(original), Describe(RtfReader.Read(fieldRtf)));
     }
 
     [Fact]
-    public void TitoliImpostatiNelCampo_SonoRiconosciuti()
+    public void HeadingsSetInTheTextBox_AreRecognized()
     {
-        int livello = 0;
+        int level = 0;
         string rtf = "";
-        EseguiSta(() =>
+        RunSta(() =>
         {
-            using var campo = new RichTextBox();
-            campo.CreateControl();
-            campo.Text = "Titolo\nCorpo";
-            campo.Select(0, 0);
-            RichEditNativo.ImpostaLivelloTitolo(campo, 2);
-            livello = RichEditNativo.LivelloTitolo(campo);
-            rtf = campo.Rtf!;
+            using var field = new RichTextBox();
+            field.CreateControl();
+            field.Text = "Titolo\nCorpo";
+            field.Select(0, 0);
+            NativeRichEdit.SetHeadingLevel(field, 2);
+            level = NativeRichEdit.HeadingLevel(field);
+            rtf = field.Rtf!;
         });
-        Assert.Equal(2, livello);
-        var contenuto = RtfLettore.Leggi(rtf);
-        Assert.Equal(2, contenuto.Paragrafi[0].LivelloTitolo);
-        Assert.Equal(0, contenuto.Paragrafi[1].LivelloTitolo);
+        Assert.Equal(2, level);
+        var content = RtfReader.Read(rtf);
+        Assert.Equal(2, content.Paragraphs[0].HeadingLevel);
+        Assert.Equal(0, content.Paragraphs[1].HeadingLevel);
     }
 
     [Fact]
-    public void AllineamentoGiustificato_ImpostatoELetto()
+    public void JustifiedAlignment_SetAndRead()
     {
-        Allineamento letto = Allineamento.Sinistra;
-        EseguiSta(() =>
+        Alignment read = Alignment.Left;
+        RunSta(() =>
         {
-            using var campo = new RichTextBox();
-            campo.CreateControl();
-            campo.Text = "abc";
-            RichEditNativo.ImpostaAllineamento(campo, Allineamento.Giustificato);
-            letto = RichEditNativo.LeggiAllineamento(campo);
+            using var field = new RichTextBox();
+            field.CreateControl();
+            field.Text = "abc";
+            NativeRichEdit.SetAlignment(field, Alignment.Justified);
+            read = NativeRichEdit.ReadAlignment(field);
         });
-        Assert.Equal(Allineamento.Giustificato, letto);
+        Assert.Equal(Alignment.Justified, read);
     }
 
     [Fact]
-    public void EffettoSuSelezioneMista_RisultaMisto()
+    public void EffectOnMixedSelection_IsMixed()
     {
-        bool? stato = false;
-        EseguiSta(() =>
+        bool? state = false;
+        RunSta(() =>
         {
-            using var campo = new RichTextBox();
-            campo.CreateControl();
-            campo.Text = "uno due";
-            campo.Select(0, 3);
-            RichEditNativo.ImpostaEffetto(campo, RichEditNativo.Effetto.Grassetto, true);
-            campo.SelectAll();
-            stato = RichEditNativo.StatoEffetto(campo, RichEditNativo.Effetto.Grassetto);
+            using var field = new RichTextBox();
+            field.CreateControl();
+            field.Text = "uno due";
+            field.Select(0, 3);
+            NativeRichEdit.SetEffect(field, NativeRichEdit.Effect.Bold, true);
+            field.SelectAll();
+            state = NativeRichEdit.EffectState(field, NativeRichEdit.Effect.Bold);
         });
-        Assert.Null(stato);
+        Assert.Null(state);
     }
 
     [Fact]
-    public void RtfRealeDiRichEdit_ConElencoPuntato()
+    public void RealRichEditRtf_WithBulletList()
     {
         const string rtf = """
             {\rtf1\ansi\deff0\nouicompat{\fonttbl{\f0\fnil Segoe UI;}{\f1\fnil\fcharset2 Symbol;}}
@@ -95,19 +95,19 @@ public class RtfTests
             \pard{\pntext\f1\'B7\tab}{\*\pn\pnlvlblt\pnf1\pnindent360{\pntxtb\'B7}}\fi-360\li360 punto\par
             }
             """;
-        var contenuto = RtfLettore.Leggi(rtf);
-        Assert.Equal(["Capitolo", "Sotto", "punto"], contenuto.Paragrafi.Select(p => p.Testo));
-        Assert.True(contenuto.Paragrafi[0].Segmenti[0].Grassetto);
-        Assert.Equal(18f, contenuto.Paragrafi[0].Segmenti[0].Dimensione);
-        Assert.False(contenuto.Paragrafi[1].Elenco);
-        Assert.True(contenuto.Paragrafi[2].Elenco);
+        var content = RtfReader.Read(rtf);
+        Assert.Equal(["Capitolo", "Sotto", "punto"], content.Paragraphs.Select(p => p.Text));
+        Assert.True(content.Paragraphs[0].Segments[0].Bold);
+        Assert.Equal(18f, content.Paragraphs[0].Segments[0].Size);
+        Assert.False(content.Paragraphs[1].Bulleted);
+        Assert.True(content.Paragraphs[2].Bulleted);
     }
 
     [Fact]
-    public void CaratteriSpecialiEUnicode()
+    public void SpecialAndUnicodeCharacters()
     {
-        // La sequenza \u seguita dal codice è spezzata apposta, perché nessuno strumento la trasformi nel carattere.
+        // The \u sequence followed by the code is split on purpose, so that no tool turns it into the character.
         var rtf = @"{\rtf1\ansi\ansicpg1252\uc1\pard caff\'e8 \" + "u" + @"8364? \{x\} \\ \emdash\par}";
-        Assert.Equal("caffè € {x} \\ —", RtfLettore.Leggi(rtf).Paragrafi[0].Testo);
+        Assert.Equal("caffè € {x} \\ —", RtfReader.Read(rtf).Paragraphs[0].Text);
     }
 }

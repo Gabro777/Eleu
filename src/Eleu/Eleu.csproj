@@ -7,7 +7,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Eleu.ico</ApplicationIcon>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>Eleu</Product>
     <Description>Programma di scrittura accessibile per persone cieche e ipovedenti</Description>
@@ -24,19 +24,19 @@
     <PackageReference Include="System.Speech" Version="10.0.12" />
   </ItemGroup>
 
-  <!-- liblouis (traduzione Braille, LGPL): la DLL accanto all'eseguibile, le tabelle in liblouis\tables. -->
+  <!-- liblouis (Braille translation, LGPL): the DLL next to the executable, the tables in liblouis\tables. -->
   <ItemGroup>
     <None Include="liblouis\liblouis.dll" Link="liblouis.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="liblouis\tables\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="liblouis\COPYING.LESSER;liblouis\LEGGIMI.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- La licenza (GPL 3) accanto all'eseguibile, come chiede la licenza stessa. -->
+  <!-- The license (GPL 3) next to the executable, as the license itself requires. -->
   <ItemGroup>
     <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- La guida utente (Aiuto > Guida di Eleu) accanto all'eseguibile. -->
+  <!-- The user guide (Aiuto > Guida di Eleu) next to the executable. -->
   <ItemGroup>
     <None Include="Guida\*.html" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

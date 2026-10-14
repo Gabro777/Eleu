@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Installer di Eleu (WiX 5). Installa per l'utente che lo apre, senza chiedere i permessi di amministratore,
-  in %LOCALAPPDATA%\Programs\Eleu: la voce nel menu Start, l'icona tra le app installate e Eleu nell'elenco
-  "Apri con" dei suoi formati, senza cambiare i programmi predefiniti.
-  Si costruisce con build-installer.ps1, che prepara la cartella da installare (Publish).
+  Eleu installer (WiX 5). Installs for the user who opens it, without asking for administrator rights,
+  in %LOCALAPPDATA%\Programs\Eleu: the Start menu entry, the icon among the installed apps and Eleu in the
+  "Open with" list of its formats, without changing the default programs.
+  Built by build-installer.ps1, which prepares the folder to install (Publish).
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Eleu" Manufacturer="Gabriele Cusimano" Version="$(Versione)" UpgradeCode="6B0E8F7A-3C1D-4E52-9A6F-2D7B4C8E1F90"
+  <Package Name="Eleu" Manufacturer="Gabriele Cusimano" Version="$(Version)" UpgradeCode="6B0E8F7A-3C1D-4E52-9A6F-2D7B4C8E1F90"
            Scope="perUser" Language="1040" Codepage="1252">
     <SummaryInformation Description="Eleu, programma di scrittura accessibile" Manufacturer="Gabriele Cusimano" />
     <MajorUpgrade DowngradeErrorMessage="È già installata una versione più recente di Eleu." />
@@ -17,7 +17,7 @@
     <Property Id="ARPCOMMENTS" Value="Programma di scrittura accessibile per persone cieche e ipovedenti" />
 
     <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="Programmi" Name="Programs">
+      <Directory Id="ProgramsFolder" Name="Programs">
         <Directory Id="INSTALLFOLDER" Name="Eleu" />
       </Directory>
     </StandardDirectory>
@@ -26,14 +26,15 @@
     <Feature Id="Eleu" Title="Eleu">
       <Files Directory="INSTALLFOLDER" Include="!(bindpath.Publish)\**" />
 
-      <Component Id="CollegamentiEApriCon" Directory="INSTALLFOLDER" Guid="5A1C9E3B-7D24-4F8A-B6E0-1C3D5F7A9B2E">
-        <Shortcut Id="MenuStart" Directory="ProgramMenuFolder" Name="Eleu" Target="[INSTALLFOLDER]Eleu.exe"
+      <Component Id="ShortcutsAndOpenWith" Directory="INSTALLFOLDER" Guid="5A1C9E3B-7D24-4F8A-B6E0-1C3D5F7A9B2E">
+        <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Eleu" Target="[INSTALLFOLDER]Eleu.exe"
                   WorkingDirectory="INSTALLFOLDER" Description="Programma di scrittura accessibile" Icon="Eleu.ico" />
-        <RegistryValue Root="HKCU" Key="Software\Eleu" Name="Installato" Type="integer" Value="1" KeyPath="yes" />
-        <RemoveFolder Id="RimuoviCartella" Directory="INSTALLFOLDER" On="uninstall" />
-        <RemoveFolder Id="RimuoviProgrammi" Directory="Programmi" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\Eleu" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+        <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+        <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
 
-        <!-- Eleu in "Apri con" per i suoi formati, senza diventare il programma predefinito. -->
+        <!-- Eleu in "Open with" for its formats, without becoming the default program. The ProgId keeps its
+             original name: changing it would break the associations users have already chosen. -->
         <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento" Value="Documento aperto con Eleu" Type="string" />
         <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento\DefaultIcon" Value="[INSTALLFOLDER]Eleu.exe,0" Type="string" />
         <RegistryValue Root="HKCU" Key="Software\Classes\Eleu.Documento\shell\open\command" Value="&quot;[INSTALLFOLDER]Eleu.exe&quot; &quot;%1&quot;" Type="string" />

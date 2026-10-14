@@ -1,166 +1,166 @@
 using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
-using Eleu.Documento;
+using Eleu.Documents;
 
 namespace Eleu.Tests;
 
 public class OdtTests
 {
-    private static Paragrafo P(string testo, Action<Paragrafo>? imposta = null)
+    private static Paragraph P(string text, Action<Paragraph>? set = null)
     {
-        var p = new Paragrafo();
-        p.Aggiungi(new Segmento(testo));
-        imposta?.Invoke(p);
+        var p = new Paragraph();
+        p.Add(new Segment(text));
+        set?.Invoke(p);
         return p;
     }
 
-    private static ContenutoDocumento Ricco()
+    private static DocumentContent Rich()
     {
-        var c = new ContenutoDocumento
+        var c = new DocumentContent
         {
-            Metadati = new Metadati("Ricette", "Anna Rossi", "Cucina", "uova, farina", new DateTime(2026, 1, 2, 3, 4, 0)),
-            Pagina = new ImpostazioniPagina(Orizzontale: true, MargineSinistro: 50, Intestazione: "Pagina {pagina} di {pagine}", PiePagina: "{titolo}"),
+            Metadata = new Metadata("Ricette", "Anna Rossi", "Cucina", "uova, farina", new DateTime(2026, 1, 2, 3, 4, 0)),
+            Page = new PageLayout(Horizontal: true, LeftMargin: 50, Header: "Pagina {pagina} di {pagine}", Footer: "{titolo}"),
         };
-        c.Paragrafi.Add(P("Torta", p => p.LivelloTitolo = 1));
-        var formattato = new Paragrafo { Allineamento = Allineamento.Giustificato, RientroPrimaRiga = 20, SpazioDopo = 6, Interlinea = 1.5f };
-        formattato.Aggiungi(new Segmento("Servono  "));
-        formattato.Aggiungi(new Segmento("uova", Grassetto: true));
-        formattato.Aggiungi(new Segmento(" e "));
-        formattato.Aggiungi(new Segmento("farina", Corsivo: true, Sottolineato: true, Dimensione: 14, Carattere: "Arial", Colore: 0xC00000));
-        formattato.Aggiungi(new Segmento("2", Posizione: PosizioneTesto.Apice));
-        c.Paragrafi.Add(formattato);
-        c.Paragrafi.Add(P("uova", p => p.Elenco = true));
-        c.Paragrafi.Add(P("farina", p => p.Elenco = true));
-        c.Paragrafi.Add(P("sbatti", p => p.Numerato = true));
-        c.Paragrafi.Add(P("cuoci", p => p.Numerato = true));
+        c.Paragraphs.Add(P("Torta", p => p.HeadingLevel = 1));
+        var formatted = new Paragraph { Alignment = Alignment.Justified, FirstLineIndent = 20, SpaceAfter = 6, LineSpacing = 1.5f };
+        formatted.Add(new Segment("Servono  "));
+        formatted.Add(new Segment("uova", Bold: true));
+        formatted.Add(new Segment(" e "));
+        formatted.Add(new Segment("farina", Italic: true, Underline: true, Size: 14, Font: "Arial", Color: 0xC00000));
+        formatted.Add(new Segment("2", Position: TextPosition.Superscript));
+        c.Paragraphs.Add(formatted);
+        c.Paragraphs.Add(P("uova", p => p.Bulleted = true));
+        c.Paragraphs.Add(P("farina", p => p.Bulleted = true));
+        c.Paragraphs.Add(P("sbatti", p => p.Numbered = true));
+        c.Paragraphs.Add(P("cuoci", p => p.Numbered = true));
 
-        // Una tabella 2 x 2 con la riga di intestazione e la prima colonna larga 3 cm.
-        string[,] celle = { { "Cosa", "Quanto" }, { "Uova", "3" } };
+        // A 2 x 2 table with the header row and the first column 3 cm wide.
+        string[,] cells = { { "Cosa", "Quanto" }, { "Uova", "3" } };
         for (int r = 0; r < 2; r++)
             for (int col = 0; col < 2; col++)
-                c.Paragrafi.Add(P(celle[r, col], p => p.Cella = new PosizioneCella(0, r, col, col == 0 ? 85.04f : 0, Intestazione: r == 0)));
+                c.Paragraphs.Add(P(cells[r, col], p => p.Cell = new CellPosition(0, r, col, col == 0 ? 85.04f : 0, Header: r == 0)));
 
-        c.Note.Add("Meglio se fresche.\nDi gallina.");
-        c.Segnalibri.Add("forno");
-        c.Commenti.Add(new Commento("Quanto zucchero?", "Luca", new DateTime(2026, 10, 10, 9, 30, 0)));
-        c.Commenti.Add(new Commento("Bella!", "Anna Rossi"));
-        c.Immagini.Add(Immagini.DaDati(ImmaginiTests.Bitmap(System.Drawing.Imaging.ImageFormat.Png), "Una torta al cioccolato"));
-        c.Paragrafi.Add(P($"Inforna{Note.Segnaposto(0)} {Segnalibri.Segnaposto(0)}a {Commenti.Inizio(0)}180 gradi{Commenti.Fine(0)}.{Commenti.Inizio(1)}{Commenti.Fine(1)}",
-            p => p.SaltoPagina = true));
-        c.Paragrafi.Add(P($"Ecco: {Immagini.Segnaposto(0)}"));
+        c.Footnotes.Add("Meglio se fresche.\nDi gallina.");
+        c.Bookmarks.Add("forno");
+        c.Comments.Add(new Comment("Quanto zucchero?", "Luca", new DateTime(2026, 10, 10, 9, 30, 0)));
+        c.Comments.Add(new Comment("Bella!", "Anna Rossi"));
+        c.Images.Add(Images.FromData(ImagesTests.Bitmap(System.Drawing.Imaging.ImageFormat.Png), "Una torta al cioccolato"));
+        c.Paragraphs.Add(P($"Inforna{FootnoteMarkers.Placeholder(0)} {Bookmarks.Placeholder(0)}a {CommentMarkers.Start(0)}180 gradi{CommentMarkers.End(0)}.{CommentMarkers.Start(1)}{CommentMarkers.End(1)}",
+            p => p.PageBreak = true));
+        c.Paragraphs.Add(P($"Ecco: {Images.Placeholder(0)}"));
         return c;
     }
 
-    private static byte[] Odt(ContenutoDocumento c)
+    private static byte[] Odt(DocumentContent c)
     {
-        using var flusso = new MemoryStream();
-        OdtFormato.Scrivi(c, flusso);
-        return flusso.ToArray();
+        using var stream = new MemoryStream();
+        OdtFormat.Write(c, stream);
+        return stream.ToArray();
     }
 
-    private static ContenutoDocumento Leggi(byte[] dati)
+    private static DocumentContent Read(byte[] data)
     {
-        using var flusso = new MemoryStream(dati);
-        return OdtFormato.Leggi(flusso);
+        using var stream = new MemoryStream(data);
+        return OdtFormat.Read(stream);
     }
 
     [Fact]
-    public void Zip_MimetypePrimoNonCompressoEXmlBenFormato()
+    public void Zip_MimetypeFirstUncompressedAndWellFormedXml()
     {
-        var dati = Odt(Ricco());
-        Assert.Equal("PK", Encoding.ASCII.GetString(dati, 0, 2));
-        // Nell'intestazione locale del primo file: metodo 0 (non compresso), nome "mimetype", poi il tipo in chiaro.
-        Assert.Equal(0, BitConverter.ToUInt16(dati, 8));
-        Assert.Equal("mimetype", Encoding.ASCII.GetString(dati, 30, 8));
-        Assert.Equal(OdtFormato.TipoMime, Encoding.ASCII.GetString(dati, 30 + 8 + BitConverter.ToUInt16(dati, 28), OdtFormato.TipoMime.Length));
+        var data = Odt(Rich());
+        Assert.Equal("PK", Encoding.ASCII.GetString(data, 0, 2));
+        // In the local header of the first file: method 0 (stored), name "mimetype", then the type in clear.
+        Assert.Equal(0, BitConverter.ToUInt16(data, 8));
+        Assert.Equal("mimetype", Encoding.ASCII.GetString(data, 30, 8));
+        Assert.Equal(OdtFormat.MimeType, Encoding.ASCII.GetString(data, 30 + 8 + BitConverter.ToUInt16(data, 28), OdtFormat.MimeType.Length));
 
-        using var zip = new ZipArchive(new MemoryStream(dati));
+        using var zip = new ZipArchive(new MemoryStream(data));
         Assert.Equal("mimetype", zip.Entries[0].FullName);
-        foreach (var nome in new[] { "content.xml", "styles.xml", "meta.xml", "META-INF/manifest.xml" })
+        foreach (var name in new[] { "content.xml", "styles.xml", "meta.xml", "META-INF/manifest.xml" })
         {
-            using var s = zip.GetEntry(nome)!.Open();
+            using var s = zip.GetEntry(name)!.Open();
             Assert.NotNull(XDocument.Load(s).Root);
         }
-        // Ogni file del pacchetto è nel manifest.
+        // Every file of the package is in the manifest.
         using var m = zip.GetEntry("META-INF/manifest.xml")!.Open();
-        var elencati = XDocument.Load(m).Descendants().Select(e => (string?)e.Attributes().FirstOrDefault(a => a.Name.LocalName == "full-path")).ToHashSet();
-        Assert.All(zip.Entries.Where(e => e.FullName is not ("mimetype" or "META-INF/manifest.xml")), e => Assert.Contains(e.FullName, elencati));
+        var listed = XDocument.Load(m).Descendants().Select(e => (string?)e.Attributes().FirstOrDefault(a => a.Name.LocalName == "full-path")).ToHashSet();
+        Assert.All(zip.Entries.Where(e => e.FullName is not ("mimetype" or "META-INF/manifest.xml")), e => Assert.Contains(e.FullName, listed));
     }
 
     [Fact]
-    public void AndataERitorno_ConservaTesto()
+    public void RoundTrip_KeepsText()
     {
-        var originale = Ricco();
-        var letto = Leggi(Odt(originale));
-        Assert.Equal(originale.Paragrafi.Select(p => p.Testo), letto.Paragrafi.Select(p => p.Testo));
-        Assert.Empty(letto.ElementiNonConservati);
+        var original = Rich();
+        var read = Read(Odt(original));
+        Assert.Equal(original.Paragraphs.Select(p => p.Text), read.Paragraphs.Select(p => p.Text));
+        Assert.Empty(read.NotPreserved);
     }
 
     [Fact]
-    public void AndataERitorno_ConservaFormattazione()
+    public void RoundTrip_KeepsFormatting()
     {
-        var letto = Leggi(Odt(Ricco()));
-        Assert.Equal(1, letto.Paragrafi[0].LivelloTitolo);
-        var p = letto.Paragrafi[1];
-        Assert.Equal(Allineamento.Giustificato, p.Allineamento);
-        Assert.Equal(20, p.RientroPrimaRiga, 1);
-        Assert.Equal(6, p.SpazioDopo, 1);
-        Assert.Equal(1.5f, p.Interlinea, 2);
-        Assert.Contains(p.Segmenti, s => s.Testo == "uova" && s.Grassetto);
-        var farina = p.Segmenti.Single(s => s.Testo == "farina");
-        Assert.True(farina.Corsivo && farina.Sottolineato);
-        Assert.Equal(14f, farina.Dimensione);
-        Assert.Equal("Arial", farina.Carattere);
-        Assert.Equal(0xC00000, farina.Colore);
-        Assert.Equal(PosizioneTesto.Apice, p.Segmenti.Single(s => s.Testo == "2").Posizione);
-        Assert.Equal("Servono  uova e farina2", p.Testo); // due spazi restano due
+        var read = Read(Odt(Rich()));
+        Assert.Equal(1, read.Paragraphs[0].HeadingLevel);
+        var p = read.Paragraphs[1];
+        Assert.Equal(Alignment.Justified, p.Alignment);
+        Assert.Equal(20, p.FirstLineIndent, 1);
+        Assert.Equal(6, p.SpaceAfter, 1);
+        Assert.Equal(1.5f, p.LineSpacing, 2);
+        Assert.Contains(p.Segments, s => s.Text == "uova" && s.Bold);
+        var flour = p.Segments.Single(s => s.Text == "farina");
+        Assert.True(flour.Italic && flour.Underline);
+        Assert.Equal(14f, flour.Size);
+        Assert.Equal("Arial", flour.Font);
+        Assert.Equal(0xC00000, flour.Color);
+        Assert.Equal(TextPosition.Superscript, p.Segments.Single(s => s.Text == "2").Position);
+        Assert.Equal("Servono  uova e farina2", p.Text); // two spaces stay two
 
-        Assert.True(letto.Paragrafi[2].Elenco && letto.Paragrafi[3].Elenco);
-        Assert.True(letto.Paragrafi[4].Numerato && letto.Paragrafi[5].Numerato);
-        Assert.True(letto.Paragrafi.Single(x => x.Testo.StartsWith("Inforna")).SaltoPagina);
+        Assert.True(read.Paragraphs[2].Bulleted && read.Paragraphs[3].Bulleted);
+        Assert.True(read.Paragraphs[4].Numbered && read.Paragraphs[5].Numbered);
+        Assert.True(read.Paragraphs.Single(x => x.Text.StartsWith("Inforna")).PageBreak);
     }
 
     [Fact]
-    public void AndataERitorno_ConservaTabellaNoteSegnalibriCommentiImmagini()
+    public void RoundTrip_KeepsTableFootnotesBookmarksCommentsImages()
     {
-        var letto = Leggi(Odt(Ricco()));
-        var celle = letto.Paragrafi.Where(p => p.Cella is not null).ToList();
-        Assert.Equal(["Cosa", "Quanto", "Uova", "3"], celle.Select(p => p.Testo));
-        Assert.True(celle[0].Cella!.Intestazione);
-        Assert.False(celle[2].Cella!.Intestazione);
-        Assert.Equal(85.04f, celle[0].Cella!.Larghezza, 1);
-        Assert.Equal((1, 1), (celle[3].Cella!.Riga, celle[3].Cella!.Colonna));
+        var read = Read(Odt(Rich()));
+        var cells = read.Paragraphs.Where(p => p.Cell is not null).ToList();
+        Assert.Equal(["Cosa", "Quanto", "Uova", "3"], cells.Select(p => p.Text));
+        Assert.True(cells[0].Cell!.Header);
+        Assert.False(cells[2].Cell!.Header);
+        Assert.Equal(85.04f, cells[0].Cell!.Width, 1);
+        Assert.Equal((1, 1), (cells[3].Cell!.Row, cells[3].Cell!.Column));
 
-        Assert.Equal(["Meglio se fresche.\nDi gallina."], letto.Note);
-        Assert.Equal(["forno"], letto.Segnalibri);
-        Assert.Equal("Quanto zucchero?", letto.Commenti[0].Testo);
-        Assert.Equal("Luca", letto.Commenti[0].Autore);
-        Assert.Equal(new DateTime(2026, 10, 10, 9, 30, 0), letto.Commenti[0].Data);
-        Assert.Equal("Bella!", letto.Commenti[1].Testo);
-        Assert.Single(letto.Immagini);
-        Assert.Equal("Una torta al cioccolato", letto.Immagini[0].Descrizione);
+        Assert.Equal(["Meglio se fresche.\nDi gallina."], read.Footnotes);
+        Assert.Equal(["forno"], read.Bookmarks);
+        Assert.Equal("Quanto zucchero?", read.Comments[0].Text);
+        Assert.Equal("Luca", read.Comments[0].Author);
+        Assert.Equal(new DateTime(2026, 10, 10, 9, 30, 0), read.Comments[0].Date);
+        Assert.Equal("Bella!", read.Comments[1].Text);
+        Assert.Single(read.Images);
+        Assert.Equal("Una torta al cioccolato", read.Images[0].Description);
     }
 
     [Fact]
-    public void AndataERitorno_ConservaPaginaEProprieta()
+    public void RoundTrip_KeepsPageAndProperties()
     {
-        var originale = Ricco();
-        var letto = Leggi(Odt(originale));
-        Assert.True(letto.Pagina.Orizzontale);
-        Assert.Equal(originale.Pagina.Larghezza, letto.Pagina.Larghezza, 0);
-        Assert.Equal(50, letto.Pagina.MargineSinistro, 1);
-        Assert.Equal("Pagina {pagina} di {pagine}", letto.Pagina.Intestazione);
-        Assert.Equal("{titolo}", letto.Pagina.PiePagina);
-        Assert.Equal(originale.Pagina.MargineSopra, letto.Pagina.MargineSopra, 0);
-        Assert.Equal(originale.Metadati with { }, letto.Metadati with { });
+        var original = Rich();
+        var read = Read(Odt(original));
+        Assert.True(read.Page.Horizontal);
+        Assert.Equal(original.Page.Width, read.Page.Width, 0);
+        Assert.Equal(50, read.Page.LeftMargin, 1);
+        Assert.Equal("Pagina {pagina} di {pagine}", read.Page.Header);
+        Assert.Equal("{titolo}", read.Page.Footer);
+        Assert.Equal(original.Page.TopMargin, read.Page.TopMargin, 0);
+        Assert.Equal(original.Metadata with { }, read.Metadata with { });
     }
 
-    /// <summary>Un documento come lo scrive LibreOffice: stili con nome, span, spazi, elenchi con il loro stile, titoli numerati.</summary>
+    /// <summary>A document as LibreOffice writes it: named styles, spans, spaces, lists with their style, numbered headings.</summary>
     [Fact]
-    public void Leggi_DocumentoComeLoScriveLibreOffice()
+    public void Read_DocumentAsLibreOfficeWritesIt()
     {
-        const string contenuto = """
+        const string content = """
             <?xml version="1.0" encoding="UTF-8"?>
             <office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" office:version="1.3">
             <office:automatic-styles>
@@ -178,38 +178,38 @@ public class OdtTests
             <table:table table:name="T"><table:table-column table:number-columns-repeated="2"/><table:table-row><table:table-cell table:number-columns-spanned="2"><text:p>unita</text:p></table:table-cell><table:covered-table-cell/></table:table-row></table:table>
             </office:text></office:body></office:document-content>
             """;
-        using var flusso = new MemoryStream();
-        using (var zip = new ZipArchive(flusso, ZipArchiveMode.Create, leaveOpen: true))
+        using var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
         {
             using var s = zip.CreateEntry("content.xml").Open();
-            s.Write(Encoding.UTF8.GetBytes(contenuto.Trim()));
+            s.Write(Encoding.UTF8.GetBytes(content.Trim()));
         }
-        flusso.Position = 0;
-        var letto = OdtFormato.Leggi(flusso);
+        stream.Position = 0;
+        var read = OdtFormat.Read(stream);
 
-        Assert.Equal("Ingredienti", letto.Paragrafi[0].Testo);
-        Assert.Equal(2, letto.Paragrafi[0].LivelloTitolo);
-        Assert.Equal("Uno due tre  quattro\tcinque", letto.Paragrafi[1].Testo);
-        Assert.Equal(Allineamento.Centro, letto.Paragrafi[1].Allineamento);
-        Assert.True(letto.Paragrafi[1].Segmenti.Single(s => s.Testo == "due").Grassetto);
-        Assert.Equal("sei", letto.Paragrafi[2].Testo);
-        Assert.True(letto.Paragrafi[3].Numerato && letto.Paragrafi[4].Numerato);
-        Assert.Equal("dentro", letto.Paragrafi[5].Testo);
-        Assert.True(letto.Paragrafi[5].Numerato);
-        Assert.Equal(["Testo della nota"], letto.Note);
-        Assert.Equal([new Commento("Sì", "Anna")], letto.Commenti);
-        Assert.Equal($"Nota{Note.Segnaposto(0)} e {Commenti.Inizio(0)}{Commenti.Fine(0)}commento.", letto.Paragrafi[6].Testo);
-        Assert.Contains(letto.ElementiNonConservati, e => e.Contains("celle unite"));
+        Assert.Equal("Ingredienti", read.Paragraphs[0].Text);
+        Assert.Equal(2, read.Paragraphs[0].HeadingLevel);
+        Assert.Equal("Uno due tre  quattro\tcinque", read.Paragraphs[1].Text);
+        Assert.Equal(Alignment.Center, read.Paragraphs[1].Alignment);
+        Assert.True(read.Paragraphs[1].Segments.Single(s => s.Text == "due").Bold);
+        Assert.Equal("sei", read.Paragraphs[2].Text);
+        Assert.True(read.Paragraphs[3].Numbered && read.Paragraphs[4].Numbered);
+        Assert.Equal("dentro", read.Paragraphs[5].Text);
+        Assert.True(read.Paragraphs[5].Numbered);
+        Assert.Equal(["Testo della nota"], read.Footnotes);
+        Assert.Equal([new Comment("Sì", "Anna")], read.Comments);
+        Assert.Equal($"Nota{FootnoteMarkers.Placeholder(0)} e {CommentMarkers.Start(0)}{CommentMarkers.End(0)}commento.", read.Paragraphs[6].Text);
+        Assert.Contains(read.NotPreserved, e => e.Contains("celle unite"));
     }
 
     [Fact]
-    public void Leggi_FileNonOdt_Errore()
+    public void Read_NonOdtFile_Error()
     {
-        using var flusso = new MemoryStream();
-        using (var zip = new ZipArchive(flusso, ZipArchiveMode.Create, leaveOpen: true))
+        using var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
             zip.CreateEntry("altro.txt");
-        flusso.Position = 0;
-        Assert.Throws<InvalidDataException>(() => OdtFormato.Leggi(flusso));
+        stream.Position = 0;
+        Assert.Throws<InvalidDataException>(() => OdtFormat.Read(stream));
     }
 
     [Theory]
@@ -217,5 +217,5 @@ public class OdtTests
     [InlineData("12pt", 12)]
     [InlineData("0.5in", 36)]
     [InlineData("10mm", 28.346)]
-    public void Punti_DalleMisure(string misura, double atteso) => Assert.Equal(atteso, OdtFormato.Punti(misura)!.Value, 1);
+    public void Points_FromMeasures(string measure, double expected) => Assert.Equal(expected, OdtFormat.Points(measure)!.Value, 1);
 }

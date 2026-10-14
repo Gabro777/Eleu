@@ -1,0 +1,48 @@
+name: Site
+
+# The page to download Eleu (GitHub Pages): site/ plus the program's icon and guide, adapted to the web.
+# With a free account GitHub Pages works only for a public repository: while it is private the job is skipped.
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'src/Eleu/Guida/**', 'docs/icon.png', '.github/workflows/site.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepare the site
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force _site | Out-Null
+          Copy-Item site/* _site/
+          Copy-Item docs/icon.png _site/icon.png
+          # The program's guide, with the site style and the link back to the main page.
+          $guide = Get-Content src/Eleu/Guida/Guida.html -Raw -Encoding utf8
+          $guide = $guide.Replace('</head>', "<meta name=`"viewport`" content=`"width=device-width, initial-scale=1`">`n<link rel=`"stylesheet`" href=`"style.css`">`n</head>")
+          $guide = $guide.Replace('<body>', "<body class=`"guide`">`n<main>`n<a class=`"back-link`" href=`"./`">Torna alla pagina di Eleu</a>")
+          $guide = $guide.Replace('</body>', "</main>`n</body>")
+          Set-Content _site/guida.html $guide -Encoding utf8
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

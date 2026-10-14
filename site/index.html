@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eleu: il programma di scrittura per persone cieche e ipovedenti</title>
+<meta name="description" content="Eleu è un programma di scrittura per Windows, gratuito e in italiano, pensato per chi usa uno screen reader o vede poco: tutto dalla tastiera, Braille, voce e documenti di tutti i giorni.">
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Vai al contenuto</a>
+
+<header class="masthead">
+  <img src="icon.png" alt="">
+  <h1>Eleu</h1>
+  <p class="subtitle">Il programma di scrittura per Windows pensato per persone cieche e ipovedenti.<br>Gratuito, libero e in italiano.</p>
+  <p><a class="download" id="download" href="https://github.com/Gabro777/Eleu/releases/latest/download/Eleu.msi">Scarica Eleu per Windows</a></p>
+  <p class="version" id="version">Ultima versione, per Windows 10 e 11 a 64 bit.</p>
+</header>
+
+<main id="content">
+  <section aria-labelledby="about">
+    <h2 id="about">Cos'è Eleu</h2>
+    <ul>
+      <li><strong>Tutto dalla tastiera</strong>, senza mouse: ogni comando è nei menu e quasi sempre ha una scorciatoia.</li>
+      <li><strong>Eleu dice sempre cosa ha fatto</strong>, con lo screen reader o con un suono breve. Pensato per NVDA, JAWS e l'Assistente vocale di Windows.</li>
+      <li><strong>Apre i documenti di tutti i giorni</strong>: Word, LibreOffice, PDF, pagine web, libri EPUB, foto di pagine scritte e fogli di carta, direttamente dallo scanner.</li>
+      <li><strong>Il Braille al centro</strong>: file BRF, stampa Braille con fronte e retro, scrittura a sei tasti, immagini in rilievo.</li>
+      <li><strong>Ascolta i tuoi testi</strong> con le voci di Windows e crea audiolibri MP3 e libri DAISY.</li>
+      <li><strong>Per chi vede poco</strong>: testo ingrandibile, pulsanti grandi con il nome scritto, righello.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">Come installarlo</h2>
+    <ol>
+      <li>Scarica il file con il pulsante qui sopra.</li>
+      <li>Aprilo: Eleu si installa per il tuo utente, senza permessi di amministratore e senza installare nient'altro.</li>
+      <li>Lo trovi nel menu Start. Dentro Eleu, <kbd>F1</kbd> apre la guida.</li>
+    </ol>
+    <p>Una volta al giorno Eleu controlla se c'è una versione nuova e, se vuoi, la installa da solo.</p>
+  </section>
+
+  <section aria-labelledby="warning">
+    <h2 id="warning">Se Windows dice che l'autore è sconosciuto</h2>
+    <p>L'installer non ha ancora una firma digitale: per questo Windows, e a volte il browser, avvisano che il file non è riconosciuto. Non vuol dire che sia pericoloso. Per installare comunque:</p>
+    <ul>
+      <li><strong>Se il browser blocca lo scaricamento</strong> (in Edge: "non viene scaricato comunemente"): apri l'elenco dei download con <kbd>Ctrl+J</kbd>, sul file scegli "Altre azioni", poi <strong>Mantieni</strong>, poi <strong>Mostra altro</strong> e <strong>Mantieni comunque</strong>.</li>
+      <li><strong>Se all'apertura compare "Windows ha protetto il PC"</strong>: premi <kbd>Tab</kbd> fino a <strong>Ulteriori informazioni</strong> e premi <kbd>Invio</kbd>; poi <kbd>Tab</kbd> fino a <strong>Esegui comunque</strong> e <kbd>Invio</kbd>.</li>
+      <li><strong>In alternativa, prima di aprirlo</strong>: seleziona il file, premi <kbd>Alt+Invio</kbd>, spunta <strong>Annulla blocco</strong> e premi OK.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="more">
+    <h2 id="more">Per saperne di più</h2>
+    <ul>
+      <li><a href="guida.html">La guida di Eleu</a>: tutti i comandi, da leggere online.</li>
+      <li><a href="https://github.com/Gabro777/Eleu/releases/latest">Le novità dell'ultima versione</a>.</li>
+      <li><a href="https://github.com/Gabro777/Eleu/issues">Segnala un problema o proponi un'idea</a> (serve un account GitHub gratuito).</li>
+      <li><a href="https://github.com/Gabro777/Eleu">Il codice sorgente su GitHub</a>.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <p>Eleu è sviluppato da Gabriele Cusimano ed è software libero con licenza GNU GPL 3.<br>
+  Non raccoglie dati: va su internet solo per controllare gli aggiornamenti e per le ricerche che chiedi tu.</p>
+</footer>
+
+<script>
+// Version, date and size of the latest release, asked of GitHub. If GitHub does not answer the page stays as it is
+// and the button still downloads the latest version.
+fetch("https://api.github.com/repos/Gabro777/Eleu/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+  .then(r => (r.ok ? r.json() : null))
+  .then(r => {
+    if (!r || !r.tag_name) return;
+    const version = r.tag_name.replace(/^v/, "");
+    const msi = (r.assets || []).find(a => /\.msi$/i.test(a.name));
+    const date = new Date(r.published_at).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+    const mb = msi ? `, ${Math.round(msi.size / 1048576)} MB` : "";
+    document.getElementById("version").textContent = `Versione ${version}, uscita il ${date}${mb}. Per Windows 10 e 11 a 64 bit.`;
+    const link = document.getElementById("download");
+    link.textContent = `Scarica Eleu ${version} per Windows`;
+    if (msi) link.href = msi.browser_download_url;
+  })
+  .catch(() => {});
+</script>
+</body>
+</html>

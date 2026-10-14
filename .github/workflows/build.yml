@@ -1,4 +1,4 @@
-name: Build e test
+name: Build and test
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       - run: dotnet build --configuration Release
       - run: dotnet test --configuration Release --no-build
 
-      # L'installer si costruisce a ogni modifica: si scarica dalla pagina dell'esecuzione (per 14 giorni).
+      # The installer is built on every change: it can be downloaded from the run page (for 14 days).
       - name: Installer
         shell: pwsh
         run: ./build-installer.ps1
@@ -27,13 +27,13 @@ jobs:
           path: artifacts/*.msi
           retention-days: 14
 
-      # Con un tag di versione (per esempio v1.0.0) l'installer va anche in una release di GitHub.
+      # With a version tag (for example v1.0.0) the installer also goes into a GitHub release.
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        # Anche una copia chiamata sempre Eleu.msi: così .../releases/latest/download/Eleu.msi scarica sempre l'ultima.
+        # Also a copy always called Eleu.msi: so .../releases/latest/download/Eleu.msi always downloads the latest.
         run: |
           Copy-Item (Get-ChildItem artifacts/Eleu-*.msi).FullName artifacts/Eleu.msi
           gh release create "${{ github.ref_name }}" (Get-ChildItem artifacts/*.msi).FullName --title "Eleu ${{ github.ref_name }}" --notes-file docs/NOVITA.md
