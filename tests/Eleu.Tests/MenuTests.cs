@@ -195,6 +195,30 @@ public class MenuTests
             items.OfType<ToolStripMenuItem>().SelectMany(i => Items(i.DropDownItems).Prepend(i));
     }
 
+    /// <summary>What Eleu says to the screen reader can also be read in the status bar: with an empty document,
+    /// Stampa braille opens nothing, and without a screen reader the user must still see why.</summary>
+    [Fact]
+    public void Announcement_AlsoWrittenInTheStatusBar()
+    {
+        string message = "";
+        RunSta(() =>
+        {
+            using var window = new MainWindow();
+            window.Show();
+            Application.DoEvents();
+            var item = Items(window.MainMenuStrip!.Items).Single(i => i.Text == "Stampa &braille...");
+            item.PerformClick();
+            for (int i = 0; i < 5; i++)
+                Application.DoEvents();
+            var bar = All(window).OfType<StatusStrip>().Single();
+            message = bar.Items[^1].Text ?? "";
+        });
+        Assert.Equal("Il documento è vuoto", message);
+
+        static IEnumerable<ToolStripMenuItem> Items(ToolStripItemCollection items) =>
+            items.OfType<ToolStripMenuItem>().SelectMany(i => Items(i.DropDownItems).Prepend(i));
+    }
+
     private static IEnumerable<Control> All(Control root) =>
         root.Controls.Cast<Control>().SelectMany(c => All(c).Prepend(c));
 }

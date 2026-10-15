@@ -15,7 +15,7 @@ public sealed partial class MainWindow : Form
     private const string AppName = "Eleu";
 
     private readonly DocumentTextBox _text;
-    private readonly ToolStripStatusLabel _positionState, _characterState, _paragraphState;
+    private readonly ToolStripStatusLabel _positionState, _characterState, _paragraphState, _message;
     private readonly MenuStrip _menu;
     private readonly IAnnouncer _announcer;
     private readonly Settings _settings;
@@ -76,9 +76,10 @@ public sealed partial class MainWindow : Form
 
         _positionState = new ToolStripStatusLabel { TextAlign = ContentAlignment.MiddleLeft, BorderSides = ToolStripStatusLabelBorderSides.Right };
         _characterState = new ToolStripStatusLabel { TextAlign = ContentAlignment.MiddleLeft, BorderSides = ToolStripStatusLabelBorderSides.Right };
-        _paragraphState = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+        _paragraphState = new ToolStripStatusLabel { TextAlign = ContentAlignment.MiddleLeft, BorderSides = ToolStripStatusLabelBorderSides.Right };
+        _message = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft, Font = new Font(Font, FontStyle.Bold) };
         var statusBar = new StatusStrip { AccessibleName = "Barra di stato" };
-        statusBar.Items.AddRange([_positionState, _characterState, _paragraphState]);
+        statusBar.Items.AddRange([_positionState, _characterState, _paragraphState, _message]);
 
         _brailleLine = CreateBrailleLine();
         // After resizing, not during it: changing the label text while WinForms
@@ -105,7 +106,7 @@ public sealed partial class MainWindow : Form
         Controls.Add(statusBar);
         Controls.Add(_menu);
 
-        _announcer = new UiaAnnouncer(this);
+        _announcer = new VisibleAnnouncer(new UiaAnnouncer(this), ShowMessage);
         ActiveControl = _text;
 
         _recoveryTimer = new System.Windows.Forms.Timer { Interval = _settings.RecoveryMinutes * 60_000 };
@@ -473,6 +474,46 @@ public sealed partial class MainWindow : Form
     /// Announcement to use right after closing a dialog: wait a moment,
     /// otherwise the screen reader covers it while reading the document that takes the focus back.
     /// </summary>
+    /// <summary>
+    /// What Eleu says to the screen reader is also written for a few seconds at the end of the status bar: without a
+    /// screen reader, "Il documento è vuoto" or "Niente da leggere" would otherwise leave nothing to see.
+    /// </summary>
+    private sealed class VisibleAnnouncer(IAnnouncer screenReader, Action<string> show) : IAnnouncer
+    {
+        public void Announce(string message)
+        {
+            screenReader.Announce(message);
+            show(message);
+        }
+    }
+
+    private System.Windows.Forms.Timer? _messageTimer;
+
+    private void ShowMessage(string message)
+    {
+        if (IsDisposed)
+            return;
+        if (InvokeRequired)
+        {
+            BeginInvoke(() => ShowMessage(message));
+            return;
+        }
+        _message.Text = message;
+        _message.ToolTipText = message;
+        if (_messageTimer is null)
+        {
+            _messageTimer = new System.Windows.Forms.Timer { Interval = 6000 };
+            _messageTimer.Tick += (_, _) =>
+            {
+                _messageTimer.Stop();
+                _message.Text = "";
+                _message.ToolTipText = "";
+            };
+        }
+        _messageTimer.Stop();
+        _messageTimer.Start();
+    }
+
     private void AnnounceShortly(string message)
     {
         var timer = new System.Windows.Forms.Timer { Interval = 400 };

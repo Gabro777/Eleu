@@ -1,11 +1,11 @@
-# Eleu 1.4.0
+# Eleu 1.4.1
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.4.0.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.4.1.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -29,6 +29,12 @@ per la voce, almeno una voce di Windows.
 - **Aggiornamenti automatici**: una volta al giorno Eleu controlla se c'è una versione nuova e la installa.
 
 ## Novità di questa versione
+
+- **I messaggi di Eleu si vedono anche a schermo**: quello che Eleu dice allo screen reader (per esempio «Il documento
+  è vuoto» o «Niente da leggere») compare anche per qualche secondo in fondo alla barra di stato. Prima, senza screen
+  reader, alcuni comandi sembravano non fare nulla.
+
+Dalla versione 1.4.0:
 
 - **Pagina di prova per la stampante Braille**: nella finestra della stampa Braille, il pulsante «Pagina di prova»
   stampa una riga con le celle numerate fino all'ultima, due righe di simboli per controllare la tabella dei caratteri
