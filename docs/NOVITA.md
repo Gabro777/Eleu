@@ -1,11 +1,11 @@
-# Eleu 1.3.0
+# Eleu 1.4.0
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.3.0.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.4.0.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -30,36 +30,36 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
-- **Controllo prima della stampa Braille**: prima di stampare o salvare il Braille, Eleu elenca quello che verrebbe male
-  (immagini senza descrizione, titoli vuoti, righe di soli simboli, interruzioni di pagina che lasciano un foglio quasi
-  vuoto, tabelle la cui prima riga sembra già contenere dati, simboli che il Braille non sa scrivere, parole più lunghe
-  della riga). Vai porta al punto, Correggi e Correggi tutto sistemano, Stampa comunque va avanti. Si può fare anche
-  quando si vuole, da Strumenti, Controllo per il Braille.
-- **Braille con il testo in nero**: nella finestra della stampa Braille, la casella «Anche una copia in nero (PDF)»
-  crea un PDF con le pagine Braille disegnate e, sotto ogni parola Braille, la stessa parola in lettere. Per
-  insegnanti, genitori e colleghi che non leggono il Braille. La casella è spenta di partenza.
-- **Foto dal telefono** (File, Foto dal telefono): senza scanner, si fotografano le pagine con il telefono. Eleu mostra
-  un codice QR e l'indirizzo scritto; dal telefono, sulla stessa rete Wi-Fi, si scatta la foto o si sceglie dalla
-  galleria, anche più pagine insieme, ed Eleu ne riconosce il testo. Le foto restano nella rete di casa e vanno a un
-  indirizzo segreto che cambia ogni volta, solo mentre la finestra è aperta.
-- **Grafici in rilievo dalle tabelle** (Inserisci, Tabelle, Grafico in rilievo dalla tabella): un grafico a barre da
-  toccare, per la stampante Braille o la carta a microcapsule, con i nomi e i valori nella didascalia in Braille.
-- **Aprire i file BRF**: i file Braille fatti con Eleu o con altri programmi tornano testo da modificare; numeri di
-  pagina, titoli ripetuti e righe di impaginazione vengono tolti e i paragrafi ricomposti.
-- **La parola letta è evidenziata**: durante la lettura ad alta voce la parola che si sente è evidenziata e il testo
-  scorre per tenerla in vista; il cursore non si sposta e lo screen reader non viene disturbato. Se il cursore è alla
-  fine del testo, F11 legge dall'inizio.
+- **Pagina di prova per la stampante Braille**: nella finestra della stampa Braille, il pulsante «Pagina di prova»
+  stampa una riga con le celle numerate fino all'ultima, due righe di simboli per controllare la tabella dei caratteri
+  della stampante e poi le righe numerate fino all'ultima della pagina. Così si vede subito quante celle e quante righe
+  entrano davvero sul foglio.
+- **Tipo di invio alla stampante Braille**: «Diretto» manda il file Braille così com'è (e valgono le impostazioni della
+  stampante); «Tramite il driver di Windows» è per le stampanti come le ViewPlus, che installano un font Braille con il
+  loro driver: Eleu stampa con quel font, una pagina Braille per foglio, e decide lui il fronte e retro. La scelta resta
+  per ogni stampante.
+- **Scorciatoie da tastiera personalizzabili** (Strumenti, Cambia le scorciatoie da tastiera): ogni comando dei menu può
+  avere un'altra scorciatoia, o nessuna. Eleu avvisa se la combinazione è già usata e permette di tornare a quelle di
+  partenza, per un comando o per tutti. Chi non cambia niente trova le scorciatoie di sempre.
+- **Segnalibri per studiare**: F5 porta al segnalibro successivo e Maiusc+F5 al precedente. Inserisci, Segnalibri,
+  Riassunto dai segnalibri raccoglie in un documento nuovo i paragrafi in cui c'è un segnalibro, nell'ordine.
+
+Nella versione 1.3.0: controllo prima della stampa Braille, copia in nero per chi non legge il Braille, foto dal
+telefono, grafici in rilievo dalle tabelle, apertura dei file BRF, parola evidenziata durante la lettura.
 
 ## Da sapere
 
+- **Stampanti Braille**: con l'invio diretto valgono le impostazioni della stampante. Righe per pagina, celle per riga,
+  fronte e retro e tabella dei caratteri vanno impostati sulla stampante e devono corrispondere a quelli scelti in Eleu.
+  Per la tabella va scelta quella nordamericana (US, North American, MIT): è lo standard dei file BRF. La pagina di
+  prova aiuta a trovare i valori giusti.
+- L'invio tramite il driver di Windows è nuovo e va ancora provato su una stampante ViewPlus vera: se qualcosa non torna,
+  segnalalo indicando il modello e cosa si legge sulla pagina di prova.
 - Per le foto dal telefono, la prima volta Windows chiede se Eleu può usare la rete: scegli Consenti. Se Windows
   considera pubblica la rete di casa, il telefono viene bloccato: la finestra di Eleu lo avvisa e spiega come
   impostare la rete come privata.
-- L'acquisizione da scanner (dalla versione 1.2.0) non è ancora stata provata con uno scanner vero: se il tuo scanner
-  non viene trovato o qualcosa non va, segnalalo indicando il modello.
-
-- La stampa Braille diretta e la carta a microcapsule sono da provare con stampanti diverse: se qualcosa non torna,
-  segnalalo indicando il modello della stampante.
+- L'acquisizione da scanner non è ancora stata provata con uno scanner vero: se il tuo scanner non viene trovato o
+  qualcosa non va, segnalalo indicando il modello.
 - Windows può dire che l'autore è sconosciuto, perché l'installer non ha ancora una firma digitale: come installarlo
   comunque è spiegato nel README, alla voce
   [Se Windows dice che l'autore è sconosciuto](https://github.com/Gabro777/Eleu#se-windows-dice-che-lautore-è-sconosciuto).

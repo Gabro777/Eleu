@@ -93,6 +93,7 @@ public sealed partial class MainWindow : Form
 
         _menu = CreateMenu();
         MainMenuStrip = _menu;
+        RegisterCommands();
 
         // The order of adding matters: the box with Dock.Fill must be added first,
         // and among the controls at the bottom the one added later is lower (the status bar);
@@ -228,10 +229,11 @@ public sealed partial class MainWindow : Form
                 MenuItem("&Aggiungi segnalibro...", Keys.Control | Keys.Shift | Keys.F5, AddBookmark),
                 MenuItem("&Elimina segnalibro", Keys.None, DeleteBookmark),
                 new ToolStripSeparator(),
-                MenuItem("Segnalibro &precedente", Keys.None, () => NearbyBookmark(forward: false)),
-                MenuItem("Segnalibro &successivo", Keys.None, () => NearbyBookmark(forward: true)),
+                MenuItem("Segnalibro &precedente", Keys.Shift | Keys.F5, () => NearbyBookmark(forward: false)),
+                MenuItem("Segnalibro &successivo", Keys.F5, () => NearbyBookmark(forward: true)),
                 new ToolStripSeparator(),
-                MenuItem("E&lenco dei segnalibri...", Keys.None, ShowBookmarkList)),
+                MenuItem("E&lenco dei segnalibri...", Keys.None, ShowBookmarkList),
+                MenuItem("&Riassunto dai segnalibri", Keys.None, BookmarkSummary)),
             CreateMenuItem("&Interruzioni di pagina",
                 MenuItem("&Aggiungi interruzione", Keys.Control | Keys.Enter, InsertPageBreak, "Ctrl+Invio"),
                 MenuItem("&Elimina interruzioni", Keys.None, DeletePageBreaks),
@@ -360,6 +362,7 @@ public sealed partial class MainWindow : Form
             MenuItem("Con&fronta con un altro documento...", Keys.None, CompareDocument),
             MenuItem("Scrittura &Braille a 6 tasti", Keys.Control | Keys.Shift | Keys.D6, ToggleBrailleTyping, "Ctrl+Maiusc+6"),
             MenuItem("Contro&llo per il Braille...", Keys.None, CheckForBraille),
+            MenuItem("Cambia le scorciatoie da &tastiera...", Keys.None, CustomizeShortcuts),
             new ToolStripSeparator(),
             MenuItem("&Dettagli del punto in cui sei",Keys.Alt | Keys.Enter, AnnounceFormatting, "Alt+Invio"),
             new ToolStripSeparator(),

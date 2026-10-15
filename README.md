@@ -92,6 +92,9 @@ Una volta installato, l'avviso non ricompare.
   nome della colonna.
 - **Titoli, segnalibri, note a piè di pagina, commenti, immagini**: per ognuno lo stesso schema di comandi nel menu
   Inserisci (aggiungi, elimina, precedente, successivo, elenco).
+- **Segnalibri per studiare**: F5 e Maiusc+F5 passano dall'uno all'altro, e il riassunto raccoglie in un documento
+  nuovo i paragrafi segnati.
+- **Scorciatoie da tastiera personalizzabili**: ogni comando può avere la combinazione che preferisci.
 - **Immagini con la descrizione** per lo screen reader, conservata anche nei file Word e LibreOffice.
 - **Commenti** di Word e LibreOffice: si leggono, si aggiungono e si conservano; Eleu avvisa quando arrivi su un testo
   commentato.
@@ -117,6 +120,8 @@ Una volta installato, l'avviso non ricompare.
 - **Copia in nero** (facoltativa): un PDF con le pagine Braille e, sotto ogni parola, la stessa parola in lettere, per
   insegnanti, genitori e colleghi che non leggono il Braille.
 - Apre i **file BRF** fatti con altri programmi e li riporta in testo da modificare.
+- **Pagina di prova** per la stampante Braille, per trovare quante celle e righe entrano sul foglio, e stampa diretta
+  oppure **tramite il driver di Windows** (per le stampanti ViewPlus e simili).
 - Anteprima Braille, riga corrente in Braille in fondo alla finestra, copia della selezione già in Braille.
 - **Scrittura a sei tasti** (F D S J K L) come con una dattilobraille.
 - **Immagini in rilievo**: un'immagine diventa grafica a punti per la stampante Braille, con un'anteprima che si legge

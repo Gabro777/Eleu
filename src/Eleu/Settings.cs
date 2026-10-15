@@ -63,6 +63,12 @@ public sealed class Settings
     [JsonPropertyName("PiegaBraille")]
     public bool BrailleFold { get; set; }
 
+    /// <summary>Braille printers used through the Windows driver (ViewPlus and similar) instead of receiving the BRF file.</summary>
+    public List<string> BrailleDriverPrinters { get; set; } = [];
+
+    /// <summary>The Braille font of the driver chosen last time; null = the first one found.</summary>
+    public string? BrailleDriverFont { get; set; }
+
     /// <summary>Strip at the bottom with the current line in Braille (useful mostly to sighted users).</summary>
     [JsonPropertyName("RigaBraille")]
     public bool BrailleLine { get; set; }
@@ -156,6 +162,12 @@ public sealed class Settings
 
     [JsonPropertyName("SostituzioniParoleIntere")]
     public bool WholeWordReplacements { get; set; } = true;
+
+    /// <summary>
+    /// Shortcuts changed by the user (Strumenti > Cambia le scorciatoie da tastiera): command, as its menu path, → keys (0 = no key).
+    /// The commands not listed keep their default.
+    /// </summary>
+    public Dictionary<string, int> Shortcuts { get; set; } = [];
 
     /// <summary>How the voice must say certain words or acronyms (Voce > Pronunce).</summary>
     [JsonPropertyName("Pronunce")]

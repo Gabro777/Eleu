@@ -251,6 +251,58 @@ public sealed partial class MainWindow
         _announcer.Announce($"Segnalibro {chosen.Name} eliminato");
     }
 
+    /// <summary>
+    /// Inserisci > Segnalibri > Riassunto dai segnalibri: the paragraphs that contain a bookmark, in document order and
+    /// with their formatting, gathered in a new document in another window. For studying: mark the key passages,
+    /// then get them all together.
+    /// </summary>
+    private void BookmarkSummary()
+    {
+        var bookmarks = BookmarkList();
+        if (bookmarks.Count == 0)
+        {
+            _announcer.Announce("Nel documento non ci sono segnalibri");
+            return;
+        }
+        var summary = SummaryOf(_text.Text, ParagraphsWithPosition().Select(p => p.Paragraph).ToList(),
+            bookmarks.Select(b => b.Position), DocumentTitle);
+
+        var name = $"Riassunto di {DocumentTitle}";
+        var window = EleuContext.Open();
+        window.LoadContent(summary);
+        window.SetCurrentDocument(null, FileFormat.Docx, Path.Combine(InitialFolder(), name + ".docx"));
+        window._text.Modified = true;
+        window.UpdateTitle();
+        int paragraphs = summary.Paragraphs.Count - 1;
+        window.AnnounceShortly($"{name}: {(paragraphs == 1 ? "1 paragrafo" : $"{paragraphs} paragrafi")}, uno per ogni punto segnato");
+    }
+
+    /// <summary>
+    /// The summary document: a title, then every paragraph that contains one of the positions (once, in order).
+    /// <paramref name="paragraphs"/> are the document paragraphs, one for each paragraph of <paramref name="text"/>.
+    /// </summary>
+    public static DocumentContent SummaryOf(string text, IReadOnlyList<Paragraph> paragraphs, IEnumerable<int> positions, string title)
+    {
+        var spans = TextStructure.Paragraphs(text);
+        var chosen = positions.Select(p => TextStructure.ParagraphOf(spans, Math.Clamp(p, 0, text.Length)))
+            .Where(i => i < paragraphs.Count).Distinct().Order();
+        var summary = new DocumentContent();
+        var heading = new Paragraph { HeadingLevel = 1 };
+        heading.Add(new Segment($"Riassunto di {title}"));
+        summary.Paragraphs.Add(heading);
+        foreach (var i in chosen)
+        {
+            var p = paragraphs[i];
+            if (p.Text.Trim().Length == 0)
+                continue;
+            // Out of its table and without its page break: here it is a paragraph among the others.
+            p.Cell = null;
+            p.PageBreak = false;
+            summary.Paragraphs.Add(p);
+        }
+        return summary;
+    }
+
     private void ShowBookmarkList()
     {
         var bookmarks = BookmarkList();

@@ -127,13 +127,20 @@ public sealed partial class MainWindow
         var heading = BrailleTitle();
         using var window = new BrailleDialog(printers, _settings.BraillePrinter, BrailleFormat with { Title = _settings.BrailleHeading ? heading : null },
             format => Paginate(paragraphs, format).Count,
-            toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading);
+            toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading,
+            printTestPage: toFile ? null : PrintBrailleTestPage,
+            delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont));
         if (window.ShowDialog(this) != DialogResult.OK)
             return;
 
         var chosen = window.Format;
         if (!toFile)
+        {
             _settings.BraillePrinter = window.Printer;
+            _settings.BrailleDriverPrinters = [.. window.DriverPrinters];
+            if (window.DriverFont is string font)
+                _settings.BrailleDriverFont = font;
+        }
         _settings.BrailleCells = chosen.CellsPerLine;
         _settings.BrailleLines = chosen.LinesPerPage;
         _settings.BrailleNumber = chosen.Number;
@@ -157,10 +164,10 @@ public sealed partial class MainWindow
         {
             try
             {
-                BraillePrinter.Print(printer, data, DocumentName);
+                SendToBraillePrinter(window, printer, pages, chosen, DocumentName);
                 done = $"Inviate {howManyPages} Braille a {printer}";
             }
-            catch (IOException e)
+            catch (Exception e) when (e is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
             {
                 MessageBox.Show(this, $"{e.Message}\n\nControlla che la stampante sia accesa e collegata.", AppName,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -230,6 +237,43 @@ public sealed partial class MainWindow
         {
             Cursor = Cursors.Default;
         }
+    }
+
+    /// <summary>
+    /// The test page (from the Braille window): numbered cells and lines, to see how many really fit on the sheet,
+    /// and a line of symbols to check the printer's Braille table.
+    /// </summary>
+    private void PrintBrailleTestPage(BrailleDialog window)
+    {
+        if (window.Printer is not string printer)
+            return;
+        try
+        {
+            var format = window.Format;
+            SendToBraillePrinter(window, printer, TestPage.Pages(format, BrailleTranslator.Translate), format, "Eleu - pagina di prova");
+            _announcer.Announce($"Pagina di prova inviata a {printer}");
+        }
+        catch (Exception e) when (e is IOException or InvalidOperationException or DllNotFoundException or System.ComponentModel.Win32Exception)
+        {
+            MessageBox.Show(this, $"Impossibile stampare la pagina di prova.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// The pages to the Braille printer, as chosen in the window: the BRF file as it is (the printer's own settings
+    /// apply), or through the Windows driver with its Braille font (one page per sheet, double-sided as chosen here).
+    /// </summary>
+    private static void SendToBraillePrinter(BrailleDialog window, string printer, List<List<string>> pages, PageFormat format, string name)
+    {
+        if (!window.ThroughDriverChosen)
+        {
+            BraillePrinter.Print(printer, BrfFormat.Byte(pages), name);
+            return;
+        }
+        if (window.DriverFont is not string font)
+            throw new InvalidOperationException(
+                "Non trovo il font Braille del driver della stampante. Il driver di ViewPlus lo installa insieme alla stampante: se manca, reinstalla il driver, oppure scegli l'invio diretto.");
+        DriverBraillePrinting.Print(printer, pages, font, format.DoubleSided, name);
     }
 
     /// <summary>The Braille pages, with numbers and table of contents translated into Braille.</summary>

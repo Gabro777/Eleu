@@ -19,6 +19,14 @@ public sealed class BrailleDialog : Form
     private readonly Label _pages;
     private readonly Func<PageFormat, int> _countPages;
     private readonly string? _headingInCells;
+    private readonly Action<BrailleDialog>? _printTestPage;
+    private readonly ComboBox _delivery, _font;
+    private readonly Label _deliveryLabel, _fontLabel;
+    private readonly HashSet<string> _driverPrinters;
+    private readonly bool _deliveryVisible;
+
+    private const string Direct = "Diretto: il file Braille (BRF) va alla stampante";
+    private const string ThroughDriver = "Tramite il driver di Windows (ViewPlus e simili)";
 
     /// <summary>Name of the chosen printer, or null to save a BRF file.</summary>
     public string? Printer => _target.SelectedItem is string choice && choice != FileItem ? choice : null;
@@ -43,10 +51,12 @@ public sealed class BrailleDialog : Form
 
     /// <param name="headingInCells">The document title already in Braille, for the line on top of every page.</param>
     public BrailleDialog(IReadOnlyList<string> printers, string? chosenPrinter, PageFormat format, Func<PageFormat, int> countPages,
-        string heading = "Braille", bool withFile = true, string? headingInCells = null)
+        string heading = "Braille", bool withFile = true, string? headingInCells = null, Action<BrailleDialog>? printTestPage = null,
+        BrailleDelivery? delivery = null)
     {
         _countPages = countPages;
         _headingInCells = headingInCells;
+        _printTestPage = printTestPage;
         Text = heading;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -69,6 +79,21 @@ public sealed class BrailleDialog : Form
         int index = chosenPrinter is null ? 0 : _target.Items.IndexOf(chosenPrinter);
         _target.SelectedIndex = Math.Max(0, index);
         AddField(grid, "&Invia a:", _target);
+
+        // How the printer gets the Braille: the BRF file as it is, or through the Windows driver with its Braille font.
+        _driverPrinters = [.. delivery?.DriverPrinters ?? []];
+        _delivery = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Tipo di invio" };
+        _delivery.Items.AddRange([Direct, ThroughDriver]);
+        _deliveryLabel = AddField(grid, "Tipo di in&vio:", _delivery);
+        _font = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Font Braille del driver" };
+        _font.Items.AddRange([.. delivery?.Fonts ?? []]);
+        if (_font.Items.Count > 0)
+            _font.SelectedIndex = Math.Max(0, delivery?.Font is string f ? _font.Items.IndexOf(f) : 0);
+        _fontLabel = AddField(grid, "Font &Braille del driver:", _font);
+        _target.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: true);
+        _delivery.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
+        _deliveryVisible = delivery is not null;
+        UpdateDelivery(fromPrinter: true);
 
         _cells = Number(format.CellsPerLine, PageFormat.MinCells, PageFormat.MaxCells, "Celle per riga");
         AddField(grid, "&Celle per riga:", _cells);
@@ -110,6 +135,12 @@ public sealed class BrailleDialog : Form
         var ok = new Button { Text = "OK", AutoSize = true, DialogResult = DialogResult.OK };
         var cancel = new Button { Text = "Annulla", AutoSize = true, DialogResult = DialogResult.Cancel };
         buttons.Controls.AddRange([ok, cancel]);
+        if (printTestPage is not null)
+        {
+            var test = new Button { Text = "Pa&gina di prova", AutoSize = true };
+            test.Click += (_, _) => PrintTestPage();
+            buttons.Controls.Add(test);
+        }
         grid.Controls.Add(buttons);
         grid.SetColumnSpan(buttons, 2);
 
@@ -117,6 +148,19 @@ public sealed class BrailleDialog : Form
         AcceptButton = ok;
         CancelButton = cancel;
         ActiveControl = _target;
+    }
+
+    /// <summary>Pagina di prova: sends the test page with the format chosen here to the chosen printer.</summary>
+    private void PrintTestPage()
+    {
+        if (Printer is not string printer)
+        {
+            MessageBox.Show(this, "La pagina di prova va alla stampante Braille: sceglila in «Invia a».", Text,
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _target.Focus();
+            return;
+        }
+        _printTestPage?.Invoke(this);
     }
 
     private void UpdatePages(bool firstTime = false)
@@ -143,10 +187,46 @@ public sealed class BrailleDialog : Form
         return checkBox;
     }
 
-    private static void AddField(TableLayoutPanel grid, string label, Control field)
+    private static Label AddField(TableLayoutPanel grid, string label, Control field)
     {
         // The label precedes the field: Windows uses it as the name and Alt+letter goes to the field.
-        grid.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) });
+        var caption = new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 6) };
+        grid.Controls.Add(caption);
         grid.Controls.Add(field);
+        return caption;
     }
+
+    /// <summary>The printer goes through the Windows driver (with its Braille font) instead of receiving the BRF file.</summary>
+    public bool ThroughDriverChosen => Printer is not null && _delivery.SelectedItem as string == ThroughDriver;
+
+    /// <summary>The driver's Braille font chosen, if any.</summary>
+    public string? DriverFont => _font.SelectedItem as string;
+
+    /// <summary>
+    /// The delivery choice is only for printers. Choosing a printer shows how it was used last time; choosing the
+    /// delivery remembers it for that printer. The font only matters through the driver.
+    /// </summary>
+    private void UpdateDelivery(bool fromPrinter)
+    {
+        bool printer = _deliveryVisible && Printer is not null;
+        if (fromPrinter && Printer is string name)
+            _delivery.SelectedItem = _driverPrinters.Contains(name) ? ThroughDriver : Direct;
+        else if (!fromPrinter && Printer is string chosen)
+        {
+            if (_delivery.SelectedItem as string == ThroughDriver)
+                _driverPrinters.Add(chosen);
+            else
+                _driverPrinters.Remove(chosen);
+        }
+        if (_delivery.SelectedIndex < 0)
+            _delivery.SelectedItem = Direct;
+        _delivery.Visible = _deliveryLabel.Visible = printer;
+        _font.Visible = _fontLabel.Visible = printer && _delivery.SelectedItem as string == ThroughDriver;
+    }
+
+    /// <summary>The printers used through the driver, after the choices made here.</summary>
+    public IReadOnlyCollection<string> DriverPrinters => _driverPrinters;
 }
+
+/// <summary>For the delivery choice: the printers used through the driver, the Braille fonts installed, the font chosen last time.</summary>
+public sealed record BrailleDelivery(IReadOnlyCollection<string> DriverPrinters, IReadOnlyList<string> Fonts, string? Font);
