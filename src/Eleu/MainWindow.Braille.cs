@@ -133,7 +133,8 @@ public sealed partial class MainWindow
         if (window.ShowDialog(this) != DialogResult.OK)
             return;
 
-        var chosen = window.Format;
+        if (FitToDriverPaper(window, window.Format) is not PageFormat chosen)
+            return;
         if (!toFile)
         {
             _settings.BraillePrinter = window.Printer;
@@ -155,6 +156,9 @@ public sealed partial class MainWindow
 
         var all = Paginate(paragraphs, chosen);
         var (from, to) = window.Range;
+        // Fewer lines per page make more pages: the whole document stays the whole document.
+        if (chosen != window.Format && from == 1 && to >= Paginate(paragraphs, window.Format).Count)
+            to = all.Count;
         var pages = all.Skip(from - 1).Take(to - from + 1).ToList();
         var data = BrfFormat.Byte(pages);
         var howManyPages = pages.Count == 1 ? "1 pagina" : $"{pages.Count} pagine";
@@ -249,7 +253,8 @@ public sealed partial class MainWindow
             return;
         try
         {
-            var format = window.Format;
+            if (FitToDriverPaper(window, window.Format) is not PageFormat format)
+                return;
             SendToBraillePrinter(window, printer, TestPage.Pages(format, BrailleTranslator.Translate), format, "Eleu - pagina di prova");
             _announcer.Announce($"Pagina di prova inviata a {printer}");
         }
@@ -257,6 +262,38 @@ public sealed partial class MainWindow
         {
             MessageBox.Show(this, $"Impossibile stampare la pagina di prova.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    /// <summary>
+    /// Through the driver Eleu itself puts the lines on the sheet: when more cells or lines are asked for than fit on the
+    /// driver's sheet, the extra ones would be cut. Says so and offers to use as many as fit; null = the user gives up.
+    /// </summary>
+    private PageFormat? FitToDriverPaper(BrailleDialog window, PageFormat format)
+    {
+        if (!window.ThroughDriverChosen || window.Printer is not string printer || window.DriverFont is not string font)
+            return format;
+        int cells, lines;
+        float width, height;
+        try
+        {
+            (cells, lines, width, height) = DriverBraillePrinting.Capacity(printer, font);
+        }
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException)
+        {
+            MessageBox.Show(this, e.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return null;
+        }
+        if (format.CellsPerLine <= cells && format.LinesPerPage <= lines)
+            return format;
+        var fitting = format with { CellsPerLine = Math.Min(format.CellsPerLine, cells), LinesPerPage = Math.Min(format.LinesPerPage, lines) };
+        var answer = MessageBox.Show(this,
+            $"Sul foglio impostato nel driver di {printer} ({width:0.#} per {height:0.#} pollici), con il font {font}, " +
+            $"ci stanno al massimo {cells} celle per riga e {lines} righe per pagina. Hai chiesto {format.CellsPerLine} celle e " +
+            $"{format.LinesPerPage} righe: quelle in più verrebbero tagliate.\n\n" +
+            $"Vuoi stampare con {fitting.CellsPerLine} celle e {fitting.LinesPerPage} righe?\n\n" +
+            "Se il foglio nella stampante è più grande, imposta il formato giusto nelle preferenze di stampa del driver.",
+            AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        return answer == DialogResult.Yes ? fitting : null;
     }
 
     /// <summary>

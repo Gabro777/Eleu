@@ -1,11 +1,11 @@
-# Eleu 1.4.1
+# Eleu 1.4.2
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.4.1.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.4.2.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -30,9 +30,16 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
-- **I messaggi di Eleu si vedono anche a schermo**: quello che Eleu dice allo screen reader (per esempio «Il documento
-  è vuoto» o «Niente da leggere») compare anche per qualche secondo in fondo alla barra di stato. Prima, senza screen
-  reader, alcuni comandi sembravano non fare nulla.
+- **Stampa Braille tramite il driver (ViewPlus) rifatta**: Eleu ora imposta la pagina come i programmi Braille che
+  funzionano già con le ViewPlus. Usa il font Braille29 a 29 punti, mette le righe alla distanza data dal font, lascia
+  mezzo pollice di margine in alto e a sinistra e, sul retro, sposta le celle in modo che cadano tra quelle del fronte.
+  Prima la prima riga poteva non uscire e alla prima e all'ultima riga mancavano dei punti.
+- **Controllo del foglio**: se le celle o le righe chieste non ci stanno sul foglio impostato nel driver della
+  stampante, Eleu lo dice prima di stampare e propone quante ce ne stanno (su un foglio alto 11 pollici, 25 righe).
+- **Avviso sui font a 8 punti**: se si sceglie un font Braille «Computer» (a 8 punti), la finestra avvisa che va scelto
+  un font a 6 punti, meglio Braille29. Le lettere vengono sempre stampate senza il punto 7.
+- **I messaggi di Eleu si vedono anche a schermo** (dalla 1.4.1): quello che Eleu dice allo screen reader compare
+  anche per qualche secondo in fondo alla barra di stato.
 
 Dalla versione 1.4.0:
 
@@ -59,7 +66,7 @@ telefono, grafici in rilievo dalle tabelle, apertura dei file BRF, parola eviden
   fronte e retro e tabella dei caratteri vanno impostati sulla stampante e devono corrispondere a quelli scelti in Eleu.
   Per la tabella va scelta quella nordamericana (US, North American, MIT): è lo standard dei file BRF. La pagina di
   prova aiuta a trovare i valori giusti.
-- L'invio tramite il driver di Windows è nuovo e va ancora provato su una stampante ViewPlus vera: se qualcosa non torna,
+- Con l'invio tramite il driver di Windows scegli il font Braille29 e stampa prima la pagina di prova: se qualcosa non torna,
   segnalalo indicando il modello e cosa si legge sulla pagina di prova.
 - Per le foto dal telefono, la prima volta Windows chiede se Eleu può usare la rete: scegli Consenti. Se Windows
   considera pubblica la rete di casa, il telefono viene bloccato: la finestra di Eleu lo avvisa e spiega come

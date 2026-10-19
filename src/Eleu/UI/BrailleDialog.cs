@@ -21,7 +21,7 @@ public sealed class BrailleDialog : Form
     private readonly string? _headingInCells;
     private readonly Action<BrailleDialog>? _printTestPage;
     private readonly ComboBox _delivery, _font;
-    private readonly Label _deliveryLabel, _fontLabel;
+    private readonly Label _deliveryLabel, _fontLabel, _fontHint;
     private readonly HashSet<string> _driverPrinters;
     private readonly bool _deliveryVisible;
 
@@ -90,6 +90,17 @@ public sealed class BrailleDialog : Form
         if (_font.Items.Count > 0)
             _font.SelectedIndex = Math.Max(0, delivery?.Font is string f ? _font.Items.IndexOf(f) : 0);
         _fontLabel = AddField(grid, "Font &Braille del driver:", _font);
+        _fontHint = new Label
+        {
+            Text = "Questo font sembra a 8 punti (\"computer\"): i punti 7 e 8 escono tra una riga e l'altra e la sua tabella non è quella dei file Braille. Scegli un font a 6 punti, con 29 o 36 nel nome (meglio Braille29).",
+            AutoSize = true,
+            MaximumSize = new Size(620, 0),
+            Font = new Font(Font, FontStyle.Bold),
+            Margin = new Padding(0, 0, 0, 6),
+        };
+        grid.Controls.Add(_fontHint);
+        grid.SetColumnSpan(_fontHint, 2);
+        _font.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
         _target.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: true);
         _delivery.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
         _deliveryVisible = delivery is not null;
@@ -222,6 +233,7 @@ public sealed class BrailleDialog : Form
             _delivery.SelectedItem = Direct;
         _delivery.Visible = _deliveryLabel.Visible = printer;
         _font.Visible = _fontLabel.Visible = printer && _delivery.SelectedItem as string == ThroughDriver;
+        _fontHint.Visible = _font.Visible && _font.SelectedItem is string font && DriverBraillePrinting.IsEightDot(font);
     }
 
     /// <summary>The printers used through the driver, after the choices made here.</summary>
