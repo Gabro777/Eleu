@@ -69,6 +69,11 @@ public sealed class Settings
     /// <summary>The Braille font of the driver chosen last time; null = the first one found.</summary>
     public string? BrailleDriverFont { get; set; }
 
+    /// <summary>The sheet for printing through the driver, in inches (11.5 x 11: the usual Braille paper).</summary>
+    public float BrailleDriverPaperWidth { get; set; } = 11.5f;
+
+    public float BrailleDriverPaperHeight { get; set; } = 11f;
+
     /// <summary>Strip at the bottom with the current line in Braille (useful mostly to sighted users).</summary>
     [JsonPropertyName("RigaBraille")]
     public bool BrailleLine { get; set; }

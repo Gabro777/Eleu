@@ -16,7 +16,7 @@ namespace Eleu.Braille;
 /// margins on the embosser's grid of dots (20 to the inch) and, on the back of the sheet, the margin moved by the dots
 /// that put the cells between the ones on the front.
 /// </remarks>
-public static class DriverBraillePrinting
+public static partial class DriverBraillePrinting
 {
     /// <summary>The embosser's grid: 20 dots to the inch.</summary>
     public const float DotInches = 0.05f;
@@ -33,14 +33,50 @@ public static class DriverBraillePrinting
     /// <summary>The colour of the Braille text: almost black, the one ViewPlus Braille fonts are printed with.</summary>
     private static readonly Color BrailleColor = Color.FromArgb(6, 7, 8);
 
-    /// <summary>The installed fonts that look like Braille fonts, the 6-dot ones first (Braille29 before Braille36: it is the one BrailleBlaster uses).</summary>
+    /// <summary>The usual sheets for Braille printers, in inches; the last choice in the window is a sheet of any size.</summary>
+    public static readonly IReadOnlyList<BraillePaper> Papers =
+    [
+        new("11,5 × 11 pollici (carta Braille)", 11.5f, 11f),
+        new("12 × 11 pollici", 12f, 11f),
+        new("12 × 12 pollici", 12f, 12f),
+        new("11 × 11,5 pollici", 11f, 11.5f),
+        new("8,5 × 11 pollici (Lettera)", 8.5f, 11f),
+        new("A4 (21 × 29,7 cm)", 8.27f, 11.69f),
+    ];
+
+    /// <summary>The installed fonts that look like Braille fonts, for the window: see <see cref="UsableFonts"/>.</summary>
     public static IReadOnlyList<string> BrailleFonts()
     {
         using var fonts = new InstalledFontCollection();
-        return [.. fonts.Families.Select(f => f.Name)
-            .Where(n => n.Contains("braille", StringComparison.OrdinalIgnoreCase) || n.Contains("tiger", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(n => n.Contains("29") ? 0 : n.Contains("36") ? 1 : 2).ThenBy(n => n, StringComparer.OrdinalIgnoreCase)];
+        return UsableFonts(fonts.Families.Select(f => f.Name)
+            .Where(n => n.Contains("braille", StringComparison.OrdinalIgnoreCase) || n.Contains("tiger", StringComparison.OrdinalIgnoreCase)));
     }
+
+    /// <summary>
+    /// All of them, the ones with the table of BRF files first (Braille29 before Braille36), then the 6-dot ones with
+    /// other tables, last the 8-dot and print ones. The driver installs them for other programs: they can be chosen,
+    /// but the window and the printing warn that the dots could come out wrong.
+    /// </summary>
+    public static IReadOnlyList<string> UsableFonts(IEnumerable<string> fonts) =>
+        [.. fonts.OrderBy(n => HasBrfTable(n) ? (n.Contains("29") ? 0 : 1) : IsEightDot(n) ? 3 : 2).ThenBy(n => n, StringComparer.OrdinalIgnoreCase)];
+
+    /// <summary>
+    /// The font to propose: the one chosen last time if it has the table of BRF files, otherwise the first one that has
+    /// it (a font chosen by mistake, like «Braille36 IT», is not kept); null without Braille fonts.
+    /// </summary>
+    public static string? ProposedFont(IReadOnlyList<string> fonts, string? lastTime) =>
+        lastTime is not null && fonts.Contains(lastTime) && (HasBrfTable(lastTime) || !fonts.Any(HasBrfTable))
+            ? lastTime
+            : fonts.FirstOrDefault(HasBrfTable) ?? fonts.FirstOrDefault();
+
+    /// <summary>
+    /// The 6-dot fonts with the table of BRF files: nothing after the size in the name, or "US" (Braille29, Braille36 US). The
+    /// variants with a language after it (like «Braille36 IT») use that language's table: the punctuation would come out wrong.
+    /// </summary>
+    public static bool HasBrfTable(string font) => BrfTableFont().IsMatch(font);
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\s*(braille|tiger)\s*-?\s*(29|36)(\s*-?\s*us)?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex BrfTableFont();
 
     /// <summary>
     /// The font size: the 6-dot ViewPlus fonts carry it in their name (Braille29 at 29 points, Braille36 at 36); the
@@ -81,22 +117,23 @@ public static class DriverBraillePrinting
         return ((int)Math.Floor(width / cellWidthInches + 0.01f), (int)Math.Floor(height / lineHeightInches + 0.01f));
     }
 
-    /// <summary>
-    /// How many cells and lines fit on the sheet the printer's driver uses, with this font; also the sheet size in
-    /// inches, to tell the user.
-    /// </summary>
-    public static (int Cells, int Lines, float Width, float Height) Capacity(string printer, string font)
+    /// <summary>How many cells and lines fit on the sheet (in inches) with this font.</summary>
+    public static (int Cells, int Lines) Capacity(SizeF paper, string font)
     {
-        var settings = new PrinterSettings { PrinterName = printer };
-        if (!settings.IsValid)
-            throw new InvalidOperationException($"La stampante {printer} non è disponibile.");
-        var page = settings.DefaultPageSettings;
-        float width = page.PaperSize.Width / 100f, height = page.PaperSize.Height / 100f;
-        if (page.Landscape)
-            (width, height) = (height, width);
         using var braille = BrailleFont(font);
-        var (cells, lines) = Capacity(width, height, CellWidth(braille), LineHeight(braille));
-        return (cells, lines, width, height);
+        return Capacity(paper.Width, paper.Height, CellWidth(braille), LineHeight(braille));
+    }
+
+    /// <summary>
+    /// The sheet for the job, as Eleu chose it (like the other Braille programs do): one of the driver's own if it has
+    /// that size, otherwise one made to measure. The size set in the driver's preferences does not count.
+    /// </summary>
+    public static PaperSize PaperFor(PrinterSettings settings, SizeF paper)
+    {
+        int width = (int)Math.Round(paper.Width * 100), height = (int)Math.Round(paper.Height * 100);
+        return settings.PaperSizes.Cast<PaperSize>().FirstOrDefault(p => p.Kind != PaperKind.Custom
+                   && Math.Abs(p.Width - width) <= 5 && Math.Abs(p.Height - height) <= 5)
+               ?? new PaperSize("Eleu Braille", width, height);
     }
 
     /// <summary>The distance from one line to the next: the font's own line spacing, in inches.</summary>
@@ -124,7 +161,8 @@ public static class DriverBraillePrinting
 
     /// <summary>Prints the pages (Unicode Braille cells) through the driver with the given Braille font.</summary>
     /// <param name="toFile">Print to this file instead of the printer (for drivers that write files, like Microsoft Print to PDF).</param>
-    public static void Print(string printer, IReadOnlyList<List<string>> pages, string font, bool doubleSided, string documentName, string? toFile = null)
+    /// <param name="paper">The sheet, in inches.</param>
+    public static void Print(string printer, IReadOnlyList<List<string>> pages, string font, SizeF paper, bool doubleSided, string documentName, string? toFile = null)
     {
         using var document = new PrintDocument { DocumentName = documentName };
         document.PrinterSettings.PrinterName = printer;
@@ -139,6 +177,8 @@ public static class DriverBraillePrinting
             document.PrinterSettings.PrintToFile = true;
             document.PrinterSettings.PrintFileName = toFile;
         }
+        document.DefaultPageSettings.PaperSize = PaperFor(document.PrinterSettings, paper);
+        document.DefaultPageSettings.Landscape = false;
         document.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
         document.OriginAtMargins = false;
 
@@ -170,4 +210,10 @@ public static class DriverBraillePrinting
         };
         document.Print();
     }
+}
+
+/// <summary>A sheet for the Braille printer: its name in the window and its size in inches.</summary>
+public sealed record BraillePaper(string Name, float Width, float Height)
+{
+    public SizeF Size => new(Width, Height);
 }

@@ -11,6 +11,9 @@
     <SummaryInformation Description="Eleu, programma di scrittura accessibile" Manufacturer="Gabriele Cusimano" />
     <MajorUpgrade DowngradeErrorMessage="È già installata una versione più recente di Eleu." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <!-- Every file is always copied, even when the one already installed has a higher version: otherwise an update
+         built with an older .NET patch skips the .NET files and then removes them with the old version (1.4.2). -->
+    <Property Id="REINSTALLMODE" Value="amus" />
 
     <Icon Id="Eleu.ico" SourceFile="$(sys.SOURCEFILEDIR)..\src\Eleu\Eleu.ico" />
     <Property Id="ARPPRODUCTICON" Value="Eleu.ico" />

@@ -129,7 +129,8 @@ public sealed partial class MainWindow
             format => Paginate(paragraphs, format).Count,
             toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading,
             printTestPage: toFile ? null : PrintBrailleTestPage,
-            delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont));
+            delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont,
+                new SizeF(_settings.BrailleDriverPaperWidth, _settings.BrailleDriverPaperHeight)));
         if (window.ShowDialog(this) != DialogResult.OK)
             return;
 
@@ -141,6 +142,7 @@ public sealed partial class MainWindow
             _settings.BrailleDriverPrinters = [.. window.DriverPrinters];
             if (window.DriverFont is string font)
                 _settings.BrailleDriverFont = font;
+            (_settings.BrailleDriverPaperWidth, _settings.BrailleDriverPaperHeight) = (window.DriverPaper.Width, window.DriverPaper.Height);
         }
         _settings.BrailleCells = chosen.CellsPerLine;
         _settings.BrailleLines = chosen.LinesPerPage;
@@ -266,17 +268,24 @@ public sealed partial class MainWindow
 
     /// <summary>
     /// Through the driver Eleu itself puts the lines on the sheet: when more cells or lines are asked for than fit on the
-    /// driver's sheet, the extra ones would be cut. Says so and offers to use as many as fit; null = the user gives up.
+    /// sheet chosen in the window, the extra ones would be cut. Says so and offers to use as many as fit; null = the user gives up.
     /// </summary>
     private PageFormat? FitToDriverPaper(BrailleDialog window, PageFormat format)
     {
-        if (!window.ThroughDriverChosen || window.Printer is not string printer || window.DriverFont is not string font)
+        if (!window.ThroughDriverChosen || window.DriverFont is not string font)
             return format;
+        // A font without the table of BRF files can be chosen, but the dots could come out wrong: asked every time.
+        if (!DriverBraillePrinting.HasBrfTable(font) && MessageBox.Show(this,
+                $"Il font {font} non usa la tabella dei file Braille: alcuni punti potrebbero uscire sbagliati.\n\n" +
+                (DriverBraillePrinting.IsEightDot(font) ? BrailleDialog.EightDotHint : BrailleDialog.OtherTableHint) +
+                "\n\nVuoi stampare lo stesso con questo font?",
+                AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            return null;
+        var paper = window.DriverPaper;
         int cells, lines;
-        float width, height;
         try
         {
-            (cells, lines, width, height) = DriverBraillePrinting.Capacity(printer, font);
+            (cells, lines) = DriverBraillePrinting.Capacity(paper, font);
         }
         catch (Exception e) when (e is InvalidOperationException or ArgumentException)
         {
@@ -287,11 +296,11 @@ public sealed partial class MainWindow
             return format;
         var fitting = format with { CellsPerLine = Math.Min(format.CellsPerLine, cells), LinesPerPage = Math.Min(format.LinesPerPage, lines) };
         var answer = MessageBox.Show(this,
-            $"Sul foglio impostato nel driver di {printer} ({width:0.#} per {height:0.#} pollici), con il font {font}, " +
+            $"Sul foglio scelto ({paper.Width:0.##} per {paper.Height:0.##} pollici), con il font {font}, " +
             $"ci stanno al massimo {cells} celle per riga e {lines} righe per pagina. Hai chiesto {format.CellsPerLine} celle e " +
             $"{format.LinesPerPage} righe: quelle in più verrebbero tagliate.\n\n" +
             $"Vuoi stampare con {fitting.CellsPerLine} celle e {fitting.LinesPerPage} righe?\n\n" +
-            "Se il foglio nella stampante è più grande, imposta il formato giusto nelle preferenze di stampa del driver.",
+            "Se il foglio nella stampante è più grande, scegli la sua misura in «Misura del foglio».",
             AppName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         return answer == DialogResult.Yes ? fitting : null;
     }
@@ -310,7 +319,7 @@ public sealed partial class MainWindow
         if (window.DriverFont is not string font)
             throw new InvalidOperationException(
                 "Non trovo il font Braille del driver della stampante. Il driver di ViewPlus lo installa insieme alla stampante: se manca, reinstalla il driver, oppure scegli l'invio diretto.");
-        DriverBraillePrinting.Print(printer, pages, font, format.DoubleSided, name);
+        DriverBraillePrinting.Print(printer, pages, font, window.DriverPaper, format.DoubleSided, name);
     }
 
     /// <summary>The Braille pages, with numbers and table of contents translated into Braille.</summary>
