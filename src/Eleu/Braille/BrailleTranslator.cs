@@ -36,8 +36,11 @@ public static class BrailleTranslator
     public static string Current
     {
         get => _current;
-        set => _current = Tables.Any(t => t.File == value) ? value : DefaultTable;
+        set => _current = KnownOrDefault(value);
     }
+
+    /// <summary>The table if it is one of Eleu's, otherwise the Italian one (a settings file from elsewhere, a removed table).</summary>
+    public static string KnownOrDefault(string? table) => Tables.Any(t => t.File == table) ? table! : DefaultTable;
 
     /// <summary>The name of a table for the user ("Italiano"); the file name if it is not one of Eleu's.</summary>
     public static string NameOf(string table) => Tables.FirstOrDefault(t => t.File == table)?.Name ?? table;

@@ -36,20 +36,12 @@ public class BrailleTableTests
     }
 
     [Fact]
-    public void Current_UnknownTableBecomesItalian()
+    public void UnknownTable_BecomesItalian()
     {
-        var before = BrailleTranslator.Current;
-        try
-        {
-            BrailleTranslator.Current = "does-not-exist.ctb";
-            Assert.Equal(BrailleTranslator.DefaultTable, BrailleTranslator.Current);
-            BrailleTranslator.Current = "fr-bfu-comp6.utb";
-            Assert.Equal("fr-bfu-comp6.utb", BrailleTranslator.Current);
-        }
-        finally
-        {
-            BrailleTranslator.Current = before;
-        }
+        // Not through Current: the other tests, running at the same time, translate with it.
+        Assert.Equal(BrailleTranslator.DefaultTable, BrailleTranslator.KnownOrDefault("does-not-exist.ctb"));
+        Assert.Equal(BrailleTranslator.DefaultTable, BrailleTranslator.KnownOrDefault(null));
+        Assert.Equal("fr-bfu-comp6.utb", BrailleTranslator.KnownOrDefault("fr-bfu-comp6.utb"));
     }
 
     [Fact]
