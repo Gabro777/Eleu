@@ -13,8 +13,8 @@ public sealed class BrailleDialog : Form
 
     private static readonly string[] NumberPositions = ["Nessuno", "In alto a destra", "In basso a destra"];
 
-    private readonly ComboBox _target, _number;
-    private readonly NumericUpDown _cells, _rows, _margin, _from, _to;
+    private readonly ComboBox _target, _number, _table;
+    private readonly NumericUpDown _cells, _rows, _margin, _indent, _from, _to;
     private readonly CheckBox _heading, _printPages, _tableOfContents, _lineSpacing, _doubleSided, _fold, _inkCopy;
     private readonly Label _pages;
     private readonly Func<PageFormat, int> _countPages;
@@ -38,9 +38,11 @@ public sealed class BrailleDialog : Form
 
     public PageFormat Format => new((int)_cells.Value, (int)_rows.Value)
     {
+        Table = BrailleTranslator.Tables[Math.Max(0, _table.SelectedIndex)].File,
         Number = (BraillePageNumber)Math.Max(0, _number.SelectedIndex),
         Title = _heading.Checked ? _headingInCells : null,
         LeftMargin = (int)_margin.Value,
+        ParagraphIndent = (int)_indent.Value,
         PrintPages = _printPages.Checked,
         TableOfContents = _tableOfContents.Checked,
         DoubleSpacing = _lineSpacing.Checked,
@@ -94,7 +96,7 @@ public sealed class BrailleDialog : Form
         _font.Items.AddRange([.. delivery?.Fonts ?? []]);
         if (_font.Items.Count > 0)
             _font.SelectedItem = DriverBraillePrinting.ProposedFont(delivery?.Fonts ?? [], delivery?.Font);
-        _fontLabel = AddField(grid, "Font &Braille del driver:", _font);
+        _fontLabel = AddField(grid, "Font Braille del driver:", _font);
         _fontHint = Hint(grid);
         _fontHint.Name = "FontHint";
 
@@ -121,12 +123,21 @@ public sealed class BrailleDialog : Form
         _deliveryVisible = delivery is not null;
         UpdateDelivery(fromPrinter: true);
 
+        // The language and kind of Braille: it changes the translation, so the page count too.
+        _table = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Tabella Braille" };
+        _table.Items.AddRange([.. BrailleTranslator.Tables.Select(t => t.Name)]);
+        _table.SelectedIndex = Math.Max(0, BrailleTranslator.Tables.ToList().FindIndex(t => t.File == format.Table));
+        AddField(grid, "Tabella &Braille:", _table);
+
         _cells = Number(format.CellsPerLine, PageFormat.MinCells, PageFormat.MaxCells, "Celle per riga");
         AddField(grid, "&Celle per riga:", _cells);
         _rows = Number(format.LinesPerPage, PageFormat.MinLines, PageFormat.MaxLines, "Righe per pagina");
         AddField(grid, "&Righe per pagina:", _rows);
         _margin = Number(format.LeftMargin, 0, 10, "Margine per la rilegatura, in celle");
         AddField(grid, "&Margine per la rilegatura (celle):", _margin);
+        _indent = Number(format.ParagraphIndent, 0, PageFormat.MaxParagraphIndent, "Rientro all'inizio dei paragrafi, in celle");
+        // No access key: all the letters of the label are already taken in this window.
+        AddField(grid, "Rientro all'inizio dei paragrafi (celle):", _indent);
 
         _number = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Numero di pagina" };
         _number.Items.AddRange(NumberPositions);
@@ -150,9 +161,10 @@ public sealed class BrailleDialog : Form
         _pages = new Label { AutoSize = true, Margin = new Padding(0, 8, 0, 0) };
         grid.Controls.Add(_pages);
         grid.SetColumnSpan(_pages, 2);
-        foreach (var n in new[] { _cells, _rows, _margin })
+        foreach (var n in new[] { _cells, _rows, _margin, _indent })
             n.ValueChanged += (_, _) => UpdatePages();
         _number.SelectedIndexChanged += (_, _) => UpdatePages();
+        _table.SelectedIndexChanged += (_, _) => UpdatePages();
         foreach (var c in new[] { _heading, _printPages, _tableOfContents, _lineSpacing, _doubleSided, _fold })
             c.CheckedChanged += (_, _) => UpdatePages();
         UpdatePages(firstTime: true);

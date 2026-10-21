@@ -14,10 +14,22 @@ public sealed partial class MainWindow
     private readonly Label _brailleLine;
     private string? _lastTranslatedLine;
 
+    /// <summary>The Braille table for all of Eleu: saved, and the Braille line shown again with it.</summary>
+    private void UseBrailleTable(string table)
+    {
+        BrailleTranslator.Current = table;
+        _settings.BrailleTable = BrailleTranslator.Current;
+        _lastTranslatedLine = null;
+        if (IsHandleCreated)
+            BeginInvoke(UpdateBrailleLine);
+    }
+
     private PageFormat BrailleFormat => new(_settings.BrailleCells, _settings.BrailleLines)
     {
+        Table = BrailleTranslator.Current,
         Number = _settings.BrailleNumber,
         LeftMargin = _settings.BrailleMargin,
+        ParagraphIndent = _settings.BrailleParagraphIndent,
         PrintPages = _settings.BraillePrintPages,
         TableOfContents = _settings.BrailleTableOfContents,
         DoubleSpacing = _settings.BrailleDoubleSpacing,
@@ -115,8 +127,16 @@ public sealed partial class MainWindow
     {
         if (!CheckBeforeBraille(toFile ? "&Salva comunque" : "&Stampa comunque"))
             return;
-        if (TranslateToBraille() is not List<BrailleParagraph> paragraphs)
+        if (TranslateToBraille() is not List<BrailleParagraph> translated)
             return;
+        // The table can be changed in the window: the document is translated again with it, once per table.
+        var byTable = new Dictionary<string, List<BrailleParagraph>> { [BrailleTranslator.Current] = translated };
+        List<BrailleParagraph> ParagraphsWith(string table)
+        {
+            if (!byTable.TryGetValue(table, out var paragraphs))
+                byTable[table] = paragraphs = TranslateToBraille(table) ?? translated;
+            return paragraphs;
+        }
 
         IReadOnlyList<string> printers = toFile ? [] : BraillePrinter.Installed();
         if (!toFile && printers.Count == 0)
@@ -126,7 +146,7 @@ public sealed partial class MainWindow
         }
         var heading = BrailleTitle();
         using var window = new BrailleDialog(printers, _settings.BraillePrinter, BrailleFormat with { Title = _settings.BrailleHeading ? heading : null },
-            format => Paginate(paragraphs, format).Count,
+            format => Paginate(ParagraphsWith(format.Table), format).Count,
             toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading,
             printTestPage: toFile ? null : PrintBrailleTestPage,
             delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont,
@@ -149,17 +169,25 @@ public sealed partial class MainWindow
         _settings.BrailleNumber = chosen.Number;
         _settings.BrailleHeading = chosen.Title is not null;
         _settings.BrailleMargin = chosen.LeftMargin;
+        _settings.BrailleParagraphIndent = chosen.ParagraphIndent;
         _settings.BraillePrintPages = chosen.PrintPages;
         _settings.BrailleTableOfContents = chosen.TableOfContents;
         _settings.BrailleDoubleSpacing = chosen.DoubleSpacing;
         _settings.BrailleDoubleSided = chosen.DoubleSided;
         _settings.BrailleFold = chosen.FoldInHalf;
+        if (chosen.Table != BrailleTranslator.Current)
+        {
+            // The table chosen here becomes Eleu's table: the Braille line, the check and 6-key typing use it too.
+            UseBrailleTable(chosen.Table);
+            if (chosen.Title is not null)
+                chosen = chosen with { Title = BrailleTranslator.Translate(DocumentTitle, chosen.Table) };
+        }
         _settings.Save();
 
-        var all = Paginate(paragraphs, chosen);
+        var all = Paginate(ParagraphsWith(chosen.Table), chosen);
         var (from, to) = window.Range;
         // Fewer lines per page make more pages: the whole document stays the whole document.
-        if (chosen != window.Format && from == 1 && to >= Paginate(paragraphs, window.Format).Count)
+        if (chosen != window.Format && from == 1 && to >= Paginate(ParagraphsWith(window.Format.Table), window.Format).Count)
             to = all.Count;
         var pages = all.Skip(from - 1).Take(to - from + 1).ToList();
         var data = BrfFormat.Byte(pages);
@@ -257,7 +285,7 @@ public sealed partial class MainWindow
         {
             if (FitToDriverPaper(window, window.Format) is not PageFormat format)
                 return;
-            SendToBraillePrinter(window, printer, TestPage.Pages(format, BrailleTranslator.Translate), format, "Eleu - pagina di prova");
+            SendToBraillePrinter(window, printer, TestPage.Pages(format, text => BrailleTranslator.Translate(text, format.Table)), format, "Eleu - pagina di prova");
             _announcer.Announce($"Pagina di prova inviata a {printer}");
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or DllNotFoundException or System.ComponentModel.Win32Exception)
@@ -324,7 +352,7 @@ public sealed partial class MainWindow
 
     /// <summary>The Braille pages, with numbers and table of contents translated into Braille.</summary>
     private static List<List<string>> Paginate(List<BrailleParagraph> paragraphs, PageFormat format) =>
-        Paginator.Paginate(paragraphs, format, BrailleTranslator.Translate);
+        Paginator.Paginate(paragraphs, format, text => BrailleTranslator.Translate(text, format.Table));
 
     private string? BrailleTitle()
     {
@@ -358,7 +386,8 @@ public sealed partial class MainWindow
     /// The document translated into Braille, one item per paragraph, with the heading level (for the table of contents) and the
     /// print page where each paragraph starts; null if empty or if the translation fails.
     /// </summary>
-    private List<BrailleParagraph>? TranslateToBraille()
+    /// <param name="table">The liblouis table; null = the current one.</param>
+    private List<BrailleParagraph>? TranslateToBraille(string? table = null)
     {
         var model = CompleteModel();
         // The print page of each paragraph, from the same pagination as paper printing.
@@ -378,7 +407,7 @@ public sealed partial class MainWindow
         {
             return texts
                 .Select(p => new BrailleParagraph(
-                    BrailleTranslator.Translate((p.Bulleted ? "- " : "") + p.Text.Replace(Pagination.PageBreak.ToString(), "").Trim()),
+                    BrailleTranslator.Translate((p.Bulleted ? "- " : "") + p.Text.Replace(Pagination.PageBreak.ToString(), "").Trim(), table ?? BrailleTranslator.Current),
                     IsHeading: p.HeadingLevel > 0,
                     NewPage: p.PageBreak,
                     Level: p.HeadingLevel,

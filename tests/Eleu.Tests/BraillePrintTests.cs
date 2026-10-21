@@ -28,6 +28,19 @@ public class BraillePrintTests
         Assert.Equal(5, page.Count(r => !Empty(r)));
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(0)]
+    [InlineData(4)]
+    public void ParagraphIndent_AsChosen_NotForHeadings(int indent)
+    {
+        var cells = new string((char)0x2801, 5);
+        BrailleParagraph[] text = [new(cells, IsHeading: true, Level: 1), new(cells), new(cells)];
+        var page = Paginator.Paginate(text, new PageFormat(20, 25) { ParagraphIndent = indent })[0].Where(r => !Empty(r)).ToList();
+        Assert.Equal(cells, page[0].TrimEnd(V));
+        Assert.All(page.Skip(1), r => Assert.Equal(new string(V, indent) + cells, r.TrimEnd(V)));
+    }
+
     [Fact]
     public void DoubleSpacing_MorePages()
     {

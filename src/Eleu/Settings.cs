@@ -48,6 +48,12 @@ public sealed class Settings
     [JsonPropertyName("MargineBraille")]
     public int BrailleMargin { get; set; }
 
+    /// <summary>The liblouis table for Braille (file name), for all of Eleu.</summary>
+    public string BrailleTable { get; set; } = "it-it-comp6.utb";
+
+    /// <summary>Blank cells at the start of every Braille paragraph.</summary>
+    public int BrailleParagraphIndent { get; set; } = 2;
+
     [JsonPropertyName("PagineStampaBraille")]
     public bool BraillePrintPages { get; set; }
 

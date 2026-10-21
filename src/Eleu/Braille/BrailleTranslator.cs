@@ -3,13 +3,44 @@ using System.Text;
 
 namespace Eleu.Braille;
 
+/// <summary>A liblouis translation table that can be chosen: its file and its name in the window.</summary>
+public sealed record BrailleTable(string File, string Name);
+
 /// <summary>
-/// Translates text into 6-dot Italian Braille with liblouis (table it-it-comp6),
-/// the standard library also used by NVDA and JAWS. Returns Unicode cells (U+2800–U+283F).
+/// Translates text into 6-dot Braille with liblouis, the standard library also used by NVDA and JAWS, with the table
+/// chosen (Italian by default). Returns Unicode cells (U+2800–U+283F).
 /// </summary>
 public static class BrailleTranslator
 {
     public const char EmptyCell = (char)0x2800;
+
+    public const string DefaultTable = "it-it-comp6.utb";
+
+    /// <summary>The tables Eleu ships, all 6-dot (the cells of BRF files and of 6-dot Braille fonts).</summary>
+    public static readonly IReadOnlyList<BrailleTable> Tables =
+    [
+        new(DefaultTable, "Italiano"),
+        new("en-ueb-g1.ctb", "Inglese UEB, integrale (grado 1)"),
+        new("en-ueb-g2.ctb", "Inglese UEB, contratto (grado 2)"),
+        new("fr-bfu-comp6.utb", "Francese, integrale"),
+        new("fr-bfu-g2.ctb", "Francese, abbreviato"),
+        new("de-g1.ctb", "Tedesco, Vollschrift (integrale)"),
+        new("de-g2.ctb", "Tedesco, Kurzschrift (contratto)"),
+        new("es-g1.ctb", "Spagnolo"),
+        new("pt-pt-g1.utb", "Portoghese"),
+    ];
+
+    private static string _current = DefaultTable;
+
+    /// <summary>The table used everywhere Eleu shows or reads Braille; an unknown one becomes the Italian table.</summary>
+    public static string Current
+    {
+        get => _current;
+        set => _current = Tables.Any(t => t.File == value) ? value : DefaultTable;
+    }
+
+    /// <summary>The name of a table for the user ("Italiano"); the file name if it is not one of Eleu's.</summary>
+    public static string NameOf(string table) => Tables.FirstOrDefault(t => t.File == table)?.Name ?? table;
 
     // liblouis modes: output as dots (dotsIO) in Unicode Braille characters (ucBrl),
     // without escape sequences for unknown characters (noUndefined).
@@ -18,13 +49,27 @@ public static class BrailleTranslator
     private const int NoUndefined = 128;
 
     private static readonly Lock Block = new(); // liblouis is not thread-safe
-    private static readonly string Table =
-        ShortPath(Path.Combine(AppContext.BaseDirectory, "liblouis", "tables", "it-it-comp6.utb"));
+    private static readonly Dictionary<string, string> Paths = [];
 
-    public static string Translate(string text)
+    /// <summary>The path of a table for liblouis (short, see <see cref="ShortPath"/>).</summary>
+    private static string PathOf(string table)
+    {
+        lock (Paths)
+        {
+            if (!Paths.TryGetValue(table, out var path))
+                Paths[table] = path = ShortPath(Path.Combine(AppContext.BaseDirectory, "liblouis", "tables", table));
+            return path;
+        }
+    }
+
+    /// <summary>Text into cells with the current table.</summary>
+    public static string Translate(string text) => Translate(text, Current);
+
+    public static string Translate(string text, string table)
     {
         if (text.Length == 0)
             return "";
+        var path = PathOf(table);
 
         // In this liblouis build characters are 32-bit (UTF-32).
         var input = MemoryMarshal.Cast<byte, uint>(Encoding.UTF32.GetBytes(text)).ToArray();
@@ -37,10 +82,10 @@ public static class BrailleTranslator
                 var output = new uint[capacity];
                 int inputLength = input.Length;
                 int outputLength = output.Length;
-                int outcome = lou_translateString(Table, input, ref inputLength, output, ref outputLength,
+                int outcome = lou_translateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl | NoUndefined);
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non è riuscito a tradurre il testo (tabella: {Table}).");
+                    throw new InvalidOperationException($"liblouis non è riuscito a tradurre il testo (tabella: {table}).");
 
                 // If the output buffer was too small, liblouis stops before the end: retry with a bigger one.
                 if (inputLength >= input.Length)
@@ -57,11 +102,14 @@ public static class BrailleTranslator
         }
     }
 
-    /// <summary>Braille cells (U+2800–U+283F) back to text, with the same table: for BRF files to edit.</summary>
-    public static string BackTranslate(string cells)
+    /// <summary>Braille cells (U+2800–U+283F) back to text, with the current table: for BRF files to edit.</summary>
+    public static string BackTranslate(string cells) => BackTranslate(cells, Current);
+
+    public static string BackTranslate(string cells, string table)
     {
         if (cells.Length == 0)
             return "";
+        var path = PathOf(table);
 
         var input = cells.Select(c => (uint)c).ToArray();
         int capacity = input.Length * 4 + 16;
@@ -73,10 +121,10 @@ public static class BrailleTranslator
                 var output = new uint[capacity];
                 int inputLength = input.Length;
                 int outputLength = output.Length;
-                int outcome = lou_backTranslateString(Table, input, ref inputLength, output, ref outputLength,
+                int outcome = lou_backTranslateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non è riuscito a leggere il Braille (tabella: {Table}).");
+                    throw new InvalidOperationException($"liblouis non è riuscito a leggere il Braille (tabella: {table}).");
                 if (inputLength >= input.Length)
                     return Encoding.UTF32.GetString(MemoryMarshal.AsBytes(output.AsSpan(0, outputLength)));
                 if (capacity > input.Length * 64)

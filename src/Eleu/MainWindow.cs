@@ -29,6 +29,7 @@ public sealed partial class MainWindow : Form
         _filesToOpen = filesToOpen;
         _openGuide = guide;
         _settings = Settings.Shared;
+        Eleu.Braille.BrailleTranslator.Current = _settings.BrailleTable;
         _recovery = new Recovery(Recovery.DefaultFolder);
 
         Width = 1000;

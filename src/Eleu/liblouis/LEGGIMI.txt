@@ -1,3 +1,3 @@
 liblouis 3.39.0 (https://github.com/liblouis/liblouis), build ufficiale win64.
 Licenza: GNU LGPL 2.1 o successiva (vedi COPYING.LESSER). Le tabelle sono distribuite senza modifiche.
-Solo le tabelle usate da Eleu: it-it-comp6.utb e i file che include.
+Solo le tabelle usate da Eleu, prese dalla versione 3.39.0 di liblouis: it-it-comp6.utb, en-ueb-g1.ctb, en-ueb-g2.ctb, fr-bfu-comp6.utb, fr-bfu-g2.ctb, de-g1.ctb, de-g2.ctb, es-g1.ctb, pt-pt-g1.utb e i file che includono.

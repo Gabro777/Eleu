@@ -26,6 +26,14 @@ public sealed record PageFormat(int CellsPerLine = 32, int LinesPerPage = 27)
 
     public int LeftMargin { get; init; }
 
+    /// <summary>The liblouis table (file name) the text is translated with: the language and the kind of Braille.</summary>
+    public string Table { get; init; } = BrailleTranslator.DefaultTable;
+
+    /// <summary>Blank cells at the start of every paragraph (not of headings): 2, as usual in Braille; 0 = none.</summary>
+    public int ParagraphIndent { get; init; } = 2;
+
+    public const int MaxParagraphIndent = 10;
+
     /// <summary>A line of dashes with the number where a new print page starts.</summary>
     public bool PrintPages { get; init; }
 
@@ -48,14 +56,12 @@ public sealed record PageFormat(int CellsPerLine = 32, int LinesPerPage = 27)
 }
 
 /// <summary>
-/// Lays out the Braille cells on the page: wraps between words, indents the start of paragraphs by two cells and
+/// Lays out the Braille cells on the page: wraps between words, indents the start of paragraphs (two cells, unless chosen otherwise) and
 /// leaves a blank line before headings. If asked, adds on top (or at the bottom) the title and the page number,
 /// the lines marking print pages and, at the start, a table of contents with the Braille page numbers.
 /// </summary>
 public static class Paginator
 {
-    public const int Indent = 2;
-
     /// <summary>Dots 3-6: the Braille dash, for the lines marking print pages.</summary>
     public const char Hyphen = (char)0x2824;
 
@@ -188,7 +194,7 @@ public static class Paginator
                 continue;
             if (paragraph.IsHeading && rows.Count > 0 && !newPage)
                 rows.Add(new Line(""));
-            int indent = paragraph.IsHeading ? 0 : Indent;
+            int indent = paragraph.IsHeading ? 0 : Math.Clamp(format.ParagraphIndent, 0, Math.Max(0, width - 1));
             bool before = true;
             foreach (var row in GoToNextLine(paragraph.Cells, width, indent))
             {

@@ -1,11 +1,11 @@
-# Eleu 1.4.3
+# Eleu 1.4.4
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.4.3.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.4.4.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -30,22 +30,21 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
-- **Corretto l'aggiornamento alla 1.4.2**: su alcuni computer, dopo l'aggiornamento automatico alla 1.4.2, Eleu non
-  partiva più e chiedeva di installare «.NET Desktop Runtime». Non serve installare .NET: basta scaricare `Eleu.msi`
-  da questa pagina e aprirlo, Eleu torna a funzionare. D'ora in poi l'installazione copia sempre tutti i file.
-- **Stampa Braille tramite il driver (ViewPlus) come nei programmi Braille che già funzionano con queste stampanti**:
-  - **Misura del foglio**: si sceglie nella finestra (11,5 × 11, 12 × 11, 12 × 12, Lettera, A4 o un'altra misura) e
-    Eleu la manda insieme alla stampa: il foglio impostato nel driver non conta più. La finestra dice quante celle e
-    quante righe ci stanno e, se se ne chiedono di più, Eleu lo dice prima di stampare e propone quante ce ne stanno.
-  - **Font giusto scelto da solo**: Braille29, oppure Braille36 o Braille36 US, cioè quelli con la tabella dei file
-    Braille. Gli altri font che il driver installa (con un'altra lingua, come «Braille36 IT», o a 8 punti, come i
-    «Computer») si possono scegliere, ma la finestra avvisa e prima di stampare Eleu chiede conferma: con quei font la
-    punteggiatura e i simboli escono sbagliati. La lingua del Braille la decide comunque Eleu, non il font.
-  - Righe alla distanza data dal font, mezzo pollice di margine in alto e a sinistra e, sul retro, celle spostate in
-    modo che cadano tra quelle del fronte. Prima la prima riga poteva non uscire e alla prima e all'ultima riga
-    mancavano dei punti.
-- **I messaggi di Eleu si vedono anche a schermo** (dalla 1.4.1): quello che Eleu dice allo screen reader compare
-  anche per qualche secondo in fondo alla barra di stato.
+- **Tabelle Braille**: nella finestra della stampa Braille e del file BRF si sceglie la tabella, cioè la lingua e il
+  tipo di Braille: italiano, inglese UEB integrale (grado 1) o contratto (grado 2), francese integrale o abbreviato,
+  tedesco integrale (Vollschrift) o contratto (Kurzschrift), spagnolo, portoghese. Il numero di pagine si aggiorna
+  subito. La tabella scelta vale per tutto Eleu: anche la riga Braille, il controllo per il Braille, la scrittura a sei
+  tasti e l'apertura dei file BRF.
+- **Rientro dei paragrafi regolabile**: «Rientro all'inizio dei paragrafi» decide quante celle vuote mettere
+  all'inizio di ogni paragrafo (2 come prima, oppure da 0 a 10); i titoli restano senza rientro.
+
+Dalla versione 1.4.3:
+
+- **Stampa Braille tramite il driver (ViewPlus)**: misura del foglio scelta in Eleu e mandata insieme alla stampa, font
+  giusto (Braille29, Braille36 o Braille36 US) scelto da solo con un avviso per gli altri, righe e margini come nei
+  programmi Braille che già funzionano con queste stampanti.
+- **Corretto l'aggiornamento alla 1.4.2**, che su alcuni computer lasciava Eleu senza .NET: chi ha ancora quel problema
+  scarichi `Eleu.msi` da questa pagina e lo apra.
 
 Dalla versione 1.4.0:
 
