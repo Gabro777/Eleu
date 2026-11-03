@@ -8,7 +8,7 @@ public sealed record BrailleTable(string File, string Name);
 
 /// <summary>
 /// Translates text into 6-dot Braille with liblouis, the standard library also used by NVDA and JAWS, with the table
-/// chosen (Italian by default). Returns Unicode cells (U+2800–U+283F).
+/// chosen (Italian by default). Returns Unicode cells (U+2800âU+283F).
 /// </summary>
 public static class BrailleTranslator
 {
@@ -65,6 +65,23 @@ public static class BrailleTranslator
         }
     }
 
+    /// <summary>
+    /// The typographic characters Word puts in by itself (curly apostrophe, curly quotes, long dashes), which the Italian
+    /// table does not know and would turn into an empty cell ("l’albero" into "l albero"), as the plain ones it
+    /// knows: the apostrophe, the quotes (liblouis tells opening from closing ones) and the hyphen.
+    /// </summary>
+    public static string Plain(string text) => string.Create(text.Length, text, static (span, source) =>
+    {
+        for (int i = 0; i < source.Length; i++)
+            span[i] = source[i] switch
+            {
+                '’' or '‘' or '‚' or '‛' or '′' or '´' or '`' => '\'',
+                '“' or '”' or '„' or '‟' or '″' or '«' or '»' => '"',
+                '‐' or '‑' or '‒' or '–' or '—' or '―' or '−' => '-',
+                var c => c,
+            };
+    });
+
     /// <summary>Text into cells with the current table.</summary>
     public static string Translate(string text) => Translate(text, Current);
 
@@ -75,7 +92,7 @@ public static class BrailleTranslator
         var path = PathOf(table);
 
         // In this liblouis build characters are 32-bit (UTF-32).
-        var input = MemoryMarshal.Cast<byte, uint>(Encoding.UTF32.GetBytes(text)).ToArray();
+        var input = MemoryMarshal.Cast<byte, uint>(Encoding.UTF32.GetBytes(table == DefaultTable ? Plain(text) : text)).ToArray();
         int capacity = input.Length * 4 + 16;
 
         lock (Block)
@@ -88,7 +105,14 @@ public static class BrailleTranslator
                 int outcome = lou_translateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl | NoUndefined);
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non è riuscito a tradurre il testo (tabella: {table}).");
+                {
+                    // Very rarely liblouis fails once with a table it then translates with no trouble: one more try.
+                    (inputLength, outputLength) = (input.Length, output.Length);
+                    outcome = lou_translateString(path, input, ref inputLength, output, ref outputLength,
+                        IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl | NoUndefined);
+                }
+                if (outcome == 0)
+                    throw new InvalidOperationException($"liblouis non Ã¨ riuscito a tradurre il testo (tabella: {table}).");
 
                 // If the output buffer was too small, liblouis stops before the end: retry with a bigger one.
                 if (inputLength >= input.Length)
@@ -105,7 +129,7 @@ public static class BrailleTranslator
         }
     }
 
-    /// <summary>Braille cells (U+2800–U+283F) back to text, with the current table: for BRF files to edit.</summary>
+    /// <summary>Braille cells (U+2800âU+283F) back to text, with the current table: for BRF files to edit.</summary>
     public static string BackTranslate(string cells) => BackTranslate(cells, Current);
 
     public static string BackTranslate(string cells, string table)
@@ -127,7 +151,13 @@ public static class BrailleTranslator
                 int outcome = lou_backTranslateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non è riuscito a leggere il Braille (tabella: {table}).");
+                {
+                    (inputLength, outputLength) = (input.Length, output.Length);
+                    outcome = lou_backTranslateString(path, input, ref inputLength, output, ref outputLength,
+                        IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
+                }
+                if (outcome == 0)
+                    throw new InvalidOperationException($"liblouis non Ã¨ riuscito a leggere il Braille (tabella: {table}).");
                 if (inputLength >= input.Length)
                     return Encoding.UTF32.GetString(MemoryMarshal.AsBytes(output.AsSpan(0, outputLength)));
                 if (capacity > input.Length * 64)
@@ -149,7 +179,7 @@ public static class BrailleTranslator
 
     /// <summary>
     /// liblouis opens the tables with the Windows ANSI encoding: if Eleu is in a folder with accented
-    /// letters (e.g. C:\Users\Niccolò) the path would not be found. The 8.3 short path is always ASCII.
+    /// letters (e.g. C:\Users\NiccolÃ²) the path would not be found. The 8.3 short path is always ASCII.
     /// </summary>
     private static string ShortPath(string path)
     {

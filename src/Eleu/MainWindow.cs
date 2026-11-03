@@ -385,6 +385,7 @@ public sealed partial class MainWindow : Form
             MenuItem("&Guida di Eleu", Keys.F1, OpenGuide),
             MenuItem("&Scorciatoie da tastiera", Keys.None, ShowShortcuts),
             MenuItem("Controlla &aggiornamenti...", Keys.None, CheckForUpdates),
+            MenuItem("&Resoconto della stampa Braille sul desktop", Keys.None, CopyPrintReportToDesktop),
             MenuItem("&Informazioni su Eleu", Keys.None, ShowAbout));
 
         var menu = new MenuStrip { AccessibleName = "Menu principale" };

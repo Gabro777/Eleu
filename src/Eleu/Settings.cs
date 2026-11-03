@@ -72,6 +72,9 @@ public sealed class Settings
     /// <summary>Braille printers used through the Windows driver (ViewPlus and similar) instead of receiving the BRF file.</summary>
     public List<string> BrailleDriverPrinters { get; set; } = [];
 
+    /// <summary>The model chosen for each Braille printer with the BRF sent directly ("Index" or "Generica").</summary>
+    public Dictionary<string, string> BrailleModels { get; set; } = [];
+
     /// <summary>The Braille font of the driver chosen last time; null = the first one found.</summary>
     public string? BrailleDriverFont { get; set; }
 
@@ -79,6 +82,11 @@ public sealed class Settings
     public float BrailleDriverPaperWidth { get; set; } = 11.5f;
 
     public float BrailleDriverPaperHeight { get; set; } = 11f;
+
+    /// <summary>Left and top margins for printing through the driver, in inches (as BrailleBlaster has them).</summary>
+    public float BrailleDriverLeftMargin { get; set; } = 0.5f;
+
+    public float BrailleDriverTopMargin { get; set; } = 0.5f;
 
     /// <summary>Strip at the bottom with the current line in Braille (useful mostly to sighted users).</summary>
     [JsonPropertyName("RigaBraille")]

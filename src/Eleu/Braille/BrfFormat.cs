@@ -32,4 +32,16 @@ public static class BrfFormat
     }
 
     public static byte[] Byte(IReadOnlyList<List<string>> pages) => Encoding.ASCII.GetBytes(Text(pages));
+
+    /// <summary>
+    /// The pages more times, for printers that get no copies command: each copy starts on a new sheet (with both sides
+    /// printed and an odd number of pages, a blank back page between one copy and the next).
+    /// </summary>
+    public static byte[] Copies(IReadOnlyList<List<string>> pages, int copies, bool doubleSided)
+    {
+        var one = Text(pages);
+        if (doubleSided && pages.Count % 2 == 1)
+            one += "\f";
+        return Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat(one, Math.Max(1, copies))));
+    }
 }

@@ -14,6 +14,29 @@ public sealed partial class MainWindow
     private readonly Label _brailleLine;
     private string? _lastTranslatedLine;
 
+    /// <summary>
+    /// Aiuto > Resoconto della stampa Braille sul desktop: the report of the last print through the driver, copied to
+    /// the desktop with a clear name, so it can be attached to a message without looking for hidden folders.
+    /// </summary>
+    private void CopyPrintReportToDesktop()
+    {
+        if (!File.Exists(PrintReport.FilePath))
+        {
+            ShowMessage("Non c'è ancora un resoconto: stampa prima in Braille tramite il driver di Windows (per esempio la pagina di prova).");
+            return;
+        }
+        const string name = "Eleu - resoconto stampa Braille.txt";
+        try
+        {
+            File.Copy(PrintReport.FilePath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), name), overwrite: true);
+            ShowMessage($"Il resoconto dell'ultima stampa Braille è sul desktop: «{name}».");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, $"Impossibile copiare il resoconto sul desktop.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     /// <summary>The Braille table for all of Eleu: saved, and the Braille line shown again with it.</summary>
     private void UseBrailleTable(string table)
     {
@@ -150,7 +173,12 @@ public sealed partial class MainWindow
             toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading,
             printTestPage: toFile ? null : PrintBrailleTestPage,
             delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont,
-                new SizeF(_settings.BrailleDriverPaperWidth, _settings.BrailleDriverPaperHeight)));
+                new SizeF(_settings.BrailleDriverPaperWidth, _settings.BrailleDriverPaperHeight))
+            {
+                Models = _settings.BrailleModels,
+                LeftMargin = _settings.BrailleDriverLeftMargin,
+                TopMargin = _settings.BrailleDriverTopMargin,
+            });
         if (window.ShowDialog(this) != DialogResult.OK)
             return;
 
@@ -160,9 +188,11 @@ public sealed partial class MainWindow
         {
             _settings.BraillePrinter = window.Printer;
             _settings.BrailleDriverPrinters = [.. window.DriverPrinters];
+            _settings.BrailleModels = new(window.Models);
             if (window.DriverFont is string font)
                 _settings.BrailleDriverFont = font;
             (_settings.BrailleDriverPaperWidth, _settings.BrailleDriverPaperHeight) = (window.DriverPaper.Width, window.DriverPaper.Height);
+            (_settings.BrailleDriverLeftMargin, _settings.BrailleDriverTopMargin) = (window.DriverLeftMargin, window.DriverTopMargin);
         }
         _settings.BrailleCells = chosen.CellsPerLine;
         _settings.BrailleLines = chosen.LinesPerPage;
@@ -198,7 +228,7 @@ public sealed partial class MainWindow
         {
             try
             {
-                SendToBraillePrinter(window, printer, pages, chosen, DocumentName);
+                SendToBraillePrinter(window, printer, pages, chosen, DocumentName, window.Copies);
                 done = $"Inviate {howManyPages} Braille a {printer}";
             }
             catch (Exception e) when (e is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
@@ -285,7 +315,7 @@ public sealed partial class MainWindow
         {
             if (FitToDriverPaper(window, window.Format) is not PageFormat format)
                 return;
-            SendToBraillePrinter(window, printer, TestPage.Pages(format, text => BrailleTranslator.Translate(text, format.Table)), format, "Eleu - pagina di prova");
+            SendToBraillePrinter(window, printer, TestPage.Pages(format, text => BrailleTranslator.Translate(text, format.Table)), format, "Eleu - pagina di prova", copies: 1);
             _announcer.Announce($"Pagina di prova inviata a {printer}");
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or DllNotFoundException or System.ComponentModel.Win32Exception)
@@ -313,7 +343,7 @@ public sealed partial class MainWindow
         int cells, lines;
         try
         {
-            (cells, lines) = DriverBraillePrinting.Capacity(paper, font);
+            (cells, lines) = DriverBraillePrinting.Capacity(paper, font, window.DriverLeftMargin, window.DriverTopMargin);
         }
         catch (Exception e) when (e is InvalidOperationException or ArgumentException)
         {
@@ -337,17 +367,23 @@ public sealed partial class MainWindow
     /// The pages to the Braille printer, as chosen in the window: the BRF file as it is (the printer's own settings
     /// apply), or through the Windows driver with its Braille font (one page per sheet, double-sided as chosen here).
     /// </summary>
-    private static void SendToBraillePrinter(BrailleDialog window, string printer, List<List<string>> pages, PageFormat format, string name)
+    /// <param name="copies">How many copies: the ones chosen in the window, 1 for the test page.</param>
+    private static void SendToBraillePrinter(BrailleDialog window, string printer, List<List<string>> pages, PageFormat format, string name, int copies)
     {
         if (!window.ThroughDriverChosen)
         {
-            BraillePrinter.Print(printer, BrfFormat.Byte(pages), name);
+            // An Index embosser gets its settings and the copies with the commands; the others the copies one after the other.
+            var data = window.IndexChosen
+                ? IndexBraille.Job(BrfFormat.Byte(pages), format, copies)
+                : BrfFormat.Copies(pages, copies, format.DoubleSided);
+            BraillePrinter.Print(printer, data, name);
             return;
         }
         if (window.DriverFont is not string font)
             throw new InvalidOperationException(
                 "Non trovo il font Braille del driver della stampante. Il driver di ViewPlus lo installa insieme alla stampante: se manca, reinstalla il driver, oppure scegli l'invio diretto.");
-        DriverBraillePrinting.Print(printer, pages, font, window.DriverPaper, format.DoubleSided, name);
+        DriverBraillePrinting.Print(printer, pages, font, window.DriverPaper, format.DoubleSided, name,
+            left: window.DriverLeftMargin, top: window.DriverTopMargin, copies: copies);
     }
 
     /// <summary>The Braille pages, with numbers and table of contents translated into Braille.</summary>

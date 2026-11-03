@@ -1,11 +1,11 @@
-# Eleu 1.4.4
+# Eleu 1.5.0
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.4.4.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.5.0.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -30,13 +30,27 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
-- **Tabelle Braille**: nella finestra della stampa Braille e del file BRF si sceglie la tabella, cioè la lingua e il
-  tipo di Braille: italiano, inglese UEB integrale (grado 1) o contratto (grado 2), francese integrale o abbreviato,
-  tedesco integrale (Vollschrift) o contratto (Kurzschrift), spagnolo, portoghese. Il numero di pagine si aggiorna
-  subito. La tabella scelta vale per tutto Eleu: anche la riga Braille, il controllo per il Braille, la scrittura a sei
-  tasti e l'apertura dei file BRF.
-- **Rientro dei paragrafi regolabile**: «Rientro all'inizio dei paragrafi» decide quante celle vuote mettere
-  all'inizio di ogni paragrafo (2 come prima, oppure da 0 a 10); i titoli restano senza rientro.
+- **Stampanti Index Braille** (Basic, Everest, BrailleBox, FanFold): con l'invio diretto, in «Modello della stampante»
+  si sceglie «Index Braille» (Eleu lo propone da solo se il nome della stampante lo fa capire). Eleu manda alla
+  stampante i comandi che impostano celle per riga, righe per pagina, fronte e retro, copie e tabella, quindi valgono
+  quelli scelti in Eleu e non serve più cambiarli sulla stampante; alla fine manda il segnale di fine documento, senza
+  il quale la stampa poteva non partire o ripetersi.
+- **Numero di copie** nella finestra della stampa Braille.
+- **Apostrofi e virgolette**: con la tabella italiana, l'apostrofo, le virgolette e i trattini «tipografici» che Word
+  inserisce da solo escono giusti in Braille (prima l'apostrofo diventava una cella vuota).
+- **Stampa tramite il driver (ViewPlus) come BrailleBlaster**: misura del foglio e margini sinistro e superiore in
+  millimetri, gli stessi valori che si usano in BrailleBlaster (per il modulo a trattore, per esempio, 292,1 × 304,8 mm
+  con margini 25,4 e 12,7); il retro del foglio usa lo stesso margine sinistro; ogni cella è stampata nella sua colonna
+  esatta, così il numero di pagina arriva alla fine della riga; il foglio su misura viene chiesto alla stampante nel
+  modo standard di Windows.
+- **Resoconto della stampa Braille** (Aiuto, Resoconto della stampa Braille sul desktop): se una stampa tramite driver
+  esce spostata, mette sul desktop un file con quello che la stampante ha davvero usato, da mandare a chi ti aiuta.
+
+Dalla versione 1.4.4:
+
+- **Tabelle Braille**: italiano, inglese UEB integrale o contratto, francese integrale o abbreviato, tedesco integrale o
+  contratto, spagnolo, portoghese; la tabella scelta vale per tutto Eleu.
+- **Rientro dei paragrafi regolabile**, da 0 a 10 celle.
 
 Dalla versione 1.4.3:
 
@@ -67,12 +81,15 @@ telefono, grafici in rilievo dalle tabelle, apertura dei file BRF, parola eviden
 
 ## Da sapere
 
-- **Stampanti Braille**: con l'invio diretto valgono le impostazioni della stampante. Righe per pagina, celle per riga,
-  fronte e retro e tabella dei caratteri vanno impostati sulla stampante e devono corrispondere a quelli scelti in Eleu.
+- **Stampanti Braille**: con l'invio diretto e il modello «Generica» valgono le impostazioni della stampante. Righe per
+  pagina, celle per riga, fronte e retro e tabella dei caratteri vanno impostati sulla stampante e devono corrispondere a
+  quelli scelti in Eleu (con le Index, invece, li imposta Eleu).
   Per la tabella va scelta quella nordamericana (US, North American, MIT): è lo standard dei file BRF. La pagina di
   prova aiuta a trovare i valori giusti.
-- Con l'invio tramite il driver di Windows scegli la misura del foglio e stampa prima la pagina di prova: se qualcosa non torna,
-  segnalalo indicando il modello e cosa si legge sulla pagina di prova.
+- Con l'invio tramite il driver di Windows scegli la misura vera del foglio e stampa prima la pagina di prova: se qualcosa
+  non torna, segnalalo indicando il modello e allegando il resoconto della stampa (menu Aiuto).
+- Il supporto per le Index è nuovo e va ancora provato su più modelli: se qualcosa non va, segnalalo indicando il
+  modello.
 - Per le foto dal telefono, la prima volta Windows chiede se Eleu può usare la rete: scegli Consenti. Se Windows
   considera pubblica la rete di casa, il telefono viene bloccato: la finestra di Eleu lo avvisa e spiega come
   impostare la rete come privata.

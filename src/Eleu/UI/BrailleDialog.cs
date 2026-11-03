@@ -21,14 +21,20 @@ public sealed class BrailleDialog : Form
     private readonly string? _headingInCells;
     private readonly Action<BrailleDialog>? _printTestPage;
     private readonly ComboBox _delivery, _font, _paper;
-    private readonly NumericUpDown _paperWidth, _paperHeight;
-    private readonly Label _deliveryLabel, _fontLabel, _fontHint, _paperLabel, _paperWidthLabel, _paperHeightLabel, _paperFits;
+    private readonly NumericUpDown _paperWidth, _paperHeight, _leftMargin, _topMargin;
+    private readonly Label _deliveryLabel, _fontLabel, _fontHint, _paperLabel, _paperWidthLabel, _paperHeightLabel, _leftMarginLabel, _topMarginLabel, _paperFits;
     private readonly HashSet<string> _driverPrinters;
+    private readonly ComboBox _model;
+    private readonly Label _modelLabel, _copiesLabel;
+    private readonly NumericUpDown _copies;
+    private readonly Dictionary<string, string> _models;
     private readonly bool _deliveryVisible;
 
     private const string Direct = "Diretto: il file Braille (BRF) va alla stampante";
     private const string ThroughDriver = "Tramite il driver di Windows (ViewPlus e simili)";
     private const string OtherPaper = "Altra misura";
+    public const string GenericModel = "Generica: valgono le impostazioni della stampante";
+    public const string IndexModel = "Index Braille: Eleu imposta celle, righe, fronte e retro e copie";
 
     public const string EightDotHint = "Questo font sembra a 8 punti (\"computer\"): i punti 7 e 8 escono tra una riga e l'altra e la sua tabella non è quella dei file Braille. Scegli Braille29 o Braille36, senza sigla o con «US».";
     public const string OtherTableHint = "Questo font usa la tabella di un'altra lingua o di un altro programma (per esempio «IT» dopo il numero): lettere e numeri escono giusti, ma la punteggiatura e i simboli no. Scegli Braille29 o Braille36, senza sigla dopo il numero oppure con «US» (la tabella dei file Braille).";
@@ -92,6 +98,18 @@ public sealed class BrailleDialog : Form
         _delivery = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Tipo di invio" };
         _delivery.Items.AddRange([Direct, ThroughDriver]);
         _deliveryLabel = AddField(grid, "Tipo di in&vio:", _delivery);
+        // With the BRF sent directly: an Index embosser gets its settings from Eleu (see IndexBraille), the others keep
+        // their own. Guessed from the printer's name, remembered for each printer.
+        _models = new(delivery?.Models ?? new Dictionary<string, string>());
+        _model = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Modello della stampante" };
+        _model.Items.AddRange([GenericModel, IndexModel]);
+        // No access key: all the letters of the label are already taken in this window.
+        _modelLabel = AddField(grid, "Modello della stampante:", _model);
+        _model.SelectedIndexChanged += (_, _) =>
+        {
+            if (Printer is string current && _model.SelectedItem is string model)
+                _models[current] = model == IndexModel ? "Index" : "Generica";
+        };
         _font = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Font Braille del driver" };
         _font.Items.AddRange([.. delivery?.Fonts ?? []]);
         if (_font.Items.Count > 0)
@@ -100,24 +118,31 @@ public sealed class BrailleDialog : Form
         _fontHint = Hint(grid);
         _fontHint.Name = "FontHint";
 
-        // Through the driver the sheet is the one chosen here, sent with the job: the driver's own setting does not count.
+        // The sheet and the margins as BrailleBlaster has them for these printers: the size of the sheet, sent with the
+        // job, and the left and top margins (the right and bottom ones are what is left after the cells and lines).
+        // In millimetres, like BrailleBlaster, so the same numbers can be copied.
         _paper = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Foglio" };
         _paper.Items.AddRange([.. DriverBraillePrinting.Papers.Select(p => p.Name), OtherPaper]);
         var paper = delivery?.Paper ?? new SizeF(11.5f, 11f);
-        int known = DriverBraillePrinting.Papers.ToList().FindIndex(p => Math.Abs(p.Width - paper.Width) < 0.01 && Math.Abs(p.Height - paper.Height) < 0.01);
+        int known = DriverBraillePrinting.Papers.ToList().FindIndex(p => DriverBraillePrinting.SameSize(p.Size, paper));
         _paper.SelectedIndex = known >= 0 ? known : _paper.Items.Count - 1;
         _paperLabel = AddField(grid, "Mis&ura del foglio:", _paper);
-        _paperWidth = Inches(paper.Width, "Larghezza del foglio, in pollici");
-        _paperWidthLabel = AddField(grid, "Larg&hezza (pollici):", _paperWidth);
-        _paperHeight = Inches(paper.Height, "Altezza del foglio, in pollici");
-        _paperHeightLabel = AddField(grid, "Alte&zza (pollici):", _paperHeight);
+        _paperWidth = Millimetres(paper.Width, 50, 500, "Larghezza del foglio, in millimetri");
+        _paperWidthLabel = AddField(grid, "Larg&hezza (mm):", _paperWidth);
+        _paperHeight = Millimetres(paper.Height, 50, 700, "Altezza del foglio, in millimetri");
+        _paperHeightLabel = AddField(grid, "Alte&zza (mm):", _paperHeight);
+        // No access keys for the margins: all the letters of their labels are already taken in this window.
+        _leftMargin = Millimetres(delivery?.LeftMargin ?? DriverBraillePrinting.MarginInches, 0, 100, "Margine sinistro, in millimetri");
+        _leftMarginLabel = AddField(grid, "Margine sinistro (mm):", _leftMargin);
+        _topMargin = Millimetres(delivery?.TopMargin ?? DriverBraillePrinting.MarginInches, 0, 100, "Margine superiore, in millimetri");
+        _topMarginLabel = AddField(grid, "Margine superiore (mm):", _topMargin);
         _paperFits = Hint(grid);
         _paperFits.Font = Font;
 
         _font.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
         _paper.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
-        _paperWidth.ValueChanged += (_, _) => UpdateDelivery(fromPrinter: false);
-        _paperHeight.ValueChanged += (_, _) => UpdateDelivery(fromPrinter: false);
+        foreach (var n in new[] { _paperWidth, _paperHeight, _leftMargin, _topMargin })
+            n.ValueChanged += (_, _) => UpdateDelivery(fromPrinter: false);
         _target.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: true);
         _delivery.SelectedIndexChanged += (_, _) => UpdateDelivery(fromPrinter: false);
         _deliveryVisible = delivery is not null;
@@ -157,6 +182,11 @@ public sealed class BrailleDialog : Form
         AddField(grid, "&Da pagina:", _from);
         _to = Number(9999, 1, 9999, "A pagina");
         AddField(grid, "&A pagina:", _to);
+        _copies = Number(delivery?.Copies ?? 1, 1, 99, "Copie");
+        // No access key: all the letters of the label are already taken in this window.
+        _copiesLabel = AddField(grid, "Copie:", _copies);
+        _copies.Visible = _copiesLabel.Visible = Printer is not null;
+        _target.SelectedIndexChanged += (_, _) => _copies.Visible = _copiesLabel.Visible = Printer is not null;
 
         _pages = new Label { AutoSize = true, Margin = new Padding(0, 8, 0, 0) };
         grid.Controls.Add(_pages);
@@ -217,8 +247,11 @@ public sealed class BrailleDialog : Form
     private static NumericUpDown Number(int @value, int min, int max, string name) =>
         new() { Minimum = min, Maximum = max, Value = Math.Clamp(@value, min, max), AccessibleName = name };
 
-    private static NumericUpDown Inches(float @value, string name) =>
-        new() { Minimum = 3, Maximum = 20, DecimalPlaces = 2, Increment = 0.25m, Value = Math.Clamp((decimal)@value, 3, 20), AccessibleName = name };
+    /// <summary>A field in millimetres (one decimal) for a length kept in inches.</summary>
+    private static NumericUpDown Millimetres(float inches, int min, int max, string name) =>
+        new() { Minimum = min, Maximum = max, DecimalPlaces = 1, Increment = 0.5m, Value = Math.Clamp(Math.Round((decimal)inches * 25.4m, 1), min, max), AccessibleName = name };
+
+    private static float InInches(NumericUpDown millimetres) => (float)(millimetres.Value / 25.4m);
 
     /// <summary>A line of text across the window, under the field it is about.</summary>
     private Label Hint(TableLayoutPanel grid)
@@ -255,7 +288,12 @@ public sealed class BrailleDialog : Form
     /// <summary>The sheet for printing through the driver, in inches.</summary>
     public SizeF DriverPaper => _paper.SelectedIndex >= 0 && _paper.SelectedIndex < DriverBraillePrinting.Papers.Count
         ? DriverBraillePrinting.Papers[_paper.SelectedIndex].Size
-        : new SizeF((float)_paperWidth.Value, (float)_paperHeight.Value);
+        : new SizeF(InInches(_paperWidth), InInches(_paperHeight));
+
+    /// <summary>Left and top margins, in inches (the left one also on the back of the sheet, as BrailleBlaster does).</summary>
+    public float DriverLeftMargin => InInches(_leftMargin);
+
+    public float DriverTopMargin => InInches(_topMargin);
 
     /// <summary>
     /// The delivery choice is only for printers. Choosing a printer shows how it was used last time; choosing the
@@ -264,6 +302,9 @@ public sealed class BrailleDialog : Form
     private void UpdateDelivery(bool fromPrinter)
     {
         bool printer = _deliveryVisible && Printer is not null;
+        if (fromPrinter && Printer is string named)
+            _model.SelectedItem = _models.TryGetValue(named, out var model) ? (model == "Index" ? IndexModel : GenericModel)
+                : IndexBraille.LooksLikeIndex(named) ? IndexModel : GenericModel;
         if (fromPrinter && Printer is string name)
             _delivery.SelectedItem = _driverPrinters.Contains(name) ? ThroughDriver : Direct;
         else if (!fromPrinter && Printer is string chosen)
@@ -276,11 +317,12 @@ public sealed class BrailleDialog : Form
         if (_delivery.SelectedIndex < 0)
             _delivery.SelectedItem = Direct;
         _delivery.Visible = _deliveryLabel.Visible = printer;
+        _model.Visible = _modelLabel.Visible = printer && _delivery.SelectedItem as string == Direct;
         bool driver = printer && _delivery.SelectedItem as string == ThroughDriver;
         _font.Visible = _fontLabel.Visible = _paper.Visible = _paperLabel.Visible = driver;
+        _leftMargin.Visible = _leftMarginLabel.Visible = _topMargin.Visible = _topMarginLabel.Visible = driver;
         _paperWidth.Visible = _paperWidthLabel.Visible = _paperHeight.Visible = _paperHeightLabel.Visible =
             driver && _paper.SelectedItem as string == OtherPaper;
-
         var font = _font.SelectedItem as string;
         _fontHint.Text = font is null || DriverBraillePrinting.HasBrfTable(font) ? ""
             : DriverBraillePrinting.IsEightDot(font) ? EightDotHint : OtherTableHint;
@@ -291,7 +333,7 @@ public sealed class BrailleDialog : Form
         {
             try
             {
-                var (cells, lines) = DriverBraillePrinting.Capacity(DriverPaper, font);
+                var (cells, lines) = DriverBraillePrinting.Capacity(DriverPaper, font, DriverLeftMargin, DriverTopMargin);
                 _paperFits.Text = $"Su questo foglio ci stanno al massimo {cells} celle per riga e {lines} righe per pagina.";
             }
             catch (InvalidOperationException e)
@@ -305,10 +347,31 @@ public sealed class BrailleDialog : Form
 
     /// <summary>The printers used through the driver, after the choices made here.</summary>
     public IReadOnlyCollection<string> DriverPrinters => _driverPrinters;
+
+    /// <summary>The model chosen for each printer ("Index" or "Generica"), after the choices made here.</summary>
+    public IReadOnlyDictionary<string, string> Models => _models;
+
+    /// <summary>The BRF goes directly to an Index embosser, with its commands.</summary>
+    public bool IndexChosen => Printer is not null && !ThroughDriverChosen && _model.SelectedItem as string == IndexModel;
+
+    /// <summary>How many copies to print.</summary>
+    public int Copies => (int)_copies.Value;
 }
 
 /// <summary>
-/// For the delivery choice: the printers used through the driver, the Braille fonts installed, the font and the sheet
-/// (in inches) chosen last time.
+/// For the delivery choice: the printers used through the driver, the Braille fonts installed, the font, the sheet
+/// and the margins (in inches) chosen last time.
 /// </summary>
-public sealed record BrailleDelivery(IReadOnlyCollection<string> DriverPrinters, IReadOnlyList<string> Fonts, string? Font, SizeF? Paper = null);
+public sealed record BrailleDelivery(IReadOnlyCollection<string> DriverPrinters, IReadOnlyList<string> Fonts, string? Font, SizeF? Paper = null)
+{
+    /// <summary>Left and top margins, in inches.</summary>
+    public float LeftMargin { get; init; } = DriverBraillePrinting.MarginInches;
+
+    public float TopMargin { get; init; } = DriverBraillePrinting.MarginInches;
+
+    /// <summary>The model of each printer chosen before ("Index" or "Generica"); the others are guessed from the name.</summary>
+    public IReadOnlyDictionary<string, string>? Models { get; init; }
+
+    /// <summary>Copies chosen last time.</summary>
+    public int Copies { get; init; } = 1;
+}

@@ -121,27 +121,64 @@ public class BrailleDeliveryTests
     }
 
     [Fact]
-    public void Paper_ChosenInTheWindow_RememberedAndOtherSize()
+    public void Paper_ChosenInTheWindow_InMillimetresLikeBrailleBlaster()
     {
+        // The tester's BrailleBlaster: 292.1 × 304.8 mm, margins 25.4 mm on the left and 12.7 mm on top.
         SizeF first = default, other = default;
+        float left = 0, top = 0;
         bool sizeFieldsHidden = false, sizeFieldsShown = false;
         RunSta(() =>
         {
-            using var window = new BrailleDialog(["ViewPlus Columbia"], "ViewPlus Columbia", new PageFormat(40, 25), _ => 1,
-                "Stampa braille", withFile: false, delivery: new BrailleDelivery(["ViewPlus Columbia"], ["Braille29"], null, new SizeF(12, 12)));
+            using var window = new BrailleDialog(["ViewPlus Columbia"], "ViewPlus Columbia", new PageFormat(40, 27), _ => 1,
+                "Stampa braille", withFile: false,
+                delivery: new BrailleDelivery(["ViewPlus Columbia"], ["Braille29"], null, new SizeF(11.5f, 12)) { LeftMargin = 1f, TopMargin = 0.5f });
             window.Show();
             first = window.DriverPaper;
-            var width = All(window).OfType<NumericUpDown>().Single(n => n.AccessibleName == "Larghezza del foglio, in pollici");
+            (left, top) = (window.DriverLeftMargin, window.DriverTopMargin);
+            var width = All(window).OfType<NumericUpDown>().Single(n => n.AccessibleName == "Larghezza del foglio, in millimetri");
             sizeFieldsHidden = !width.Visible;
             Combo(window, "Foglio").SelectedItem = "Altra misura";
             sizeFieldsShown = width.Visible;
-            width.Value = 13.5m;
+            width.Value = 304.8m;
             other = window.DriverPaper;
+            Assert.Equal(25.4m, All(window).OfType<NumericUpDown>().Single(n => n.AccessibleName == "Margine sinistro, in millimetri").Value);
+            Assert.Equal(12.7m, All(window).OfType<NumericUpDown>().Single(n => n.AccessibleName == "Margine superiore, in millimetri").Value);
         });
-        Assert.Equal(new SizeF(12, 12), first);
+        Assert.Equal(new SizeF(11.5f, 12), first);
+        Assert.Equal((1f, 0.5f), (left, top), new InchesComparer());
         Assert.True(sizeFieldsHidden);
         Assert.True(sizeFieldsShown);
-        Assert.Equal(new SizeF(13.5f, 12), other);
+        Assert.Equal(12f, other.Width, 0.01f);
+        Assert.Equal(12f, other.Height, 0.01f);
+    }
+
+    private sealed class InchesComparer : IEqualityComparer<(float, float)>
+    {
+        public bool Equals((float, float) a, (float, float) b) => Math.Abs(a.Item1 - b.Item1) < 0.01 && Math.Abs(a.Item2 - b.Item2) < 0.01;
+        public int GetHashCode((float, float) obj) => 0;
+    }
+
+    [Fact]
+    public void PaperFor_TheDriversOwnForm_EvenAMadeOne()
+    {
+        // A form made in the driver for the tractor (custom kind): used as it is, not replaced by a new size.
+        var made = new PaperSize("11.5 x 12 in", 1150, 1200);
+        Assert.Same(made, DriverBraillePrinting.PaperFor([new PaperSize("Letter", 850, 1100), made], new SizeF(11.5f, 12)));
+        var own = DriverBraillePrinting.PaperFor([made], new SizeF(12, 12));
+        Assert.Equal("Eleu Braille", own.PaperName);
+        // Asked as a user-defined sheet (256), not with code 0, which the ViewPlus driver does not use for the sheet.
+        Assert.Equal(DriverBraillePrinting.UserDefinedPaper, own.RawKind);
+        Assert.Equal(PaperKind.Custom, own.Kind);
+    }
+
+    [Fact]
+    public void Capacity_AfterTheLeftAndTopMargins_LikeBrailleBlaster()
+    {
+        // The tester's sheet in BrailleBlaster: cells of 6.2 mm, lines of 10 mm. 40 cells and 27 lines fit, the
+        // rest is the right (18.7 mm) and bottom (22.1 mm) margin BrailleBlaster shows.
+        var (cells, lines) = DriverBraillePrinting.Capacity(11.5f, 12f, 6.2f / 25.4f, 10f / 25.4f, left: 1f, top: 0.5f);
+        Assert.Equal(43, cells);
+        Assert.Equal(29, lines);
     }
 
     [Fact]
@@ -159,20 +196,61 @@ public class BrailleDeliveryTests
     [InlineData(8.5f, 10, 10, 11)]
     // 11 inches = 220 dots; 200 rest 0; with a front margin of 11 dots: 199, rest 4, no change.
     [InlineData(11f, 11, 10, 10)]
+    // The tester's sheet in BrailleBlaster: 11.5 inches, margin 1 inch (20 dots): 190, rest 0, one dot more.
+    [InlineData(11.5f, 20, 20, 21)]
     // rest 3: two dots more.
     [InlineData(11f, 12, 5, 7)]
     public void BackOfTheSheet_CellsBetweenTheFrontOnes(float width, int front, int desired, int expected) =>
         Assert.Equal(expected, DriverBraillePrinting.BackMarginDots(width, front, desired));
 
     [Fact]
-    public void Capacity_LikeTheOtherBrailleProgramsOnElevenInchPaper()
+    public void Runs_EachGroupOfCellsWithItsColumn()
     {
-        // Braille29 at 29 points: a line is about 0.4 inches, a cell 0.25 (the size of a Braille cell).
-        var (cells, lines) = DriverBraillePrinting.Capacity(11.5f, 11f, 0.25f, 29f / 72);
-        Assert.Equal(42, cells);
-        Assert.Equal(25, lines);
-        // The 29 lines asked for on the tester's sheet do not fit.
-        Assert.True(lines < 29);
+        Assert.Equal([(0, "ab"), (5, "c"), (9, "de")], DriverBraillePrinting.Runs("ab   c   de"));
+        Assert.Equal([(3, "x")], DriverBraillePrinting.Runs("   x"));
+        Assert.Empty(DriverBraillePrinting.Runs("    "));
+    }
+
+    [Fact]
+    public void CellWidth_NotTheSpaceOfTheFont()
+    {
+        // In a font whose space is narrower than a full cell, writing the empty cells as spaces would move what follows
+        // to the left: the cell width is the one of a full cell.
+        using var font = new Font("Times New Roman", 29f, GraphicsUnit.Point);
+        using var bitmap = new Bitmap(1, 1);
+        using var g = Graphics.FromImage(bitmap);
+        g.PageUnit = GraphicsUnit.Inch;
+        float tenSpaces = g.MeasureString("=" + new string(' ', 10) + "=", font, PointF.Empty, StringFormat.GenericTypographic).Width
+            - g.MeasureString("==", font, PointF.Empty, StringFormat.GenericTypographic).Width;
+        Assert.True(tenSpaces < 10 * DriverBraillePrinting.CellWidth(font) * 0.9, "lo spazio di questo font non è più stretto: il test non dimostra niente");
+    }
+
+    [Fact]
+    public void ThroughTheDriver_EachGroupOfCellsInItsColumn()
+    {
+        // The second cell after 10 empty ones: 11 cells further, measured on the cells, not on the font's space. (Only a
+        // fixed-width font: with the others the PDF printer of Windows writes no readable text to measure.)
+        const string pdfPrinter = "Microsoft Print to PDF", font = "Courier New";
+        if (!PrinterSettings.InstalledPrinters.Cast<string>().Contains(pdfPrinter))
+            return;
+        var file = Path.Combine(Path.GetTempPath(), $"eleu-test-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            const char a = (char)0x2801, b = (char)0x2803; // BRF "A" and "B"
+            var line = a + new string(BrailleTranslator.EmptyCell, 10) + b;
+            RunSta(() => DriverBraillePrinting.Print(pdfPrinter, [[line]], font, new SizeF(8.27f, 11.69f), doubleSided: false, "Eleu - prova", file));
+            float cell;
+            using (var courier = new Font(font, DriverBraillePrinting.FontSize(font), GraphicsUnit.Point))
+                cell = DriverBraillePrinting.CellWidth(courier) * 72;
+            using var pdf = PdfDocument.Open(file);
+            var letters = pdf.GetPage(1).Letters.Where(l => l.Value.Trim().Length > 0).OrderBy(l => l.StartBaseLine.X).ToList();
+            Assert.Equal(2, letters.Count);
+            Assert.InRange(letters[1].StartBaseLine.X - letters[0].StartBaseLine.X, 11 * cell - 2, 11 * cell + 2);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
     }
 
     [Fact]
@@ -188,6 +266,10 @@ public class BrailleDeliveryTests
             RunSta(() => DriverBraillePrinting.Print(pdfPrinter, pages, "Courier New", new SizeF(8.27f, 11.69f), doubleSided: true, "Eleu - prova", file));
             using var pdf = PdfDocument.Open(file);
             Assert.Equal(pages.Count, pdf.NumberOfPages);
+            // The report of what the driver really gave, for the user to send.
+            var report = File.ReadAllText(PrintReport.FilePath);
+            Assert.Contains("foglio ricevuto dal driver", report);
+            Assert.Contains("Pagina 2 (retro)", report);
             // The sheet is the one Eleu asks for (A4 here), not the one set in the printer.
             Assert.InRange(pdf.GetPage(1).Width, 590, 600);
             Assert.InRange(pdf.GetPage(1).Height, 837, 847);
