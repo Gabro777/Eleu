@@ -110,6 +110,8 @@ public static class Importer
         return await RecognizeAsync(CreateOcrEngine(), stream, cancel);
     }
 
+    private static readonly SemaphoreSlim OneRecognition = new(1, 1);
+
     private static async Task<IReadOnlyList<string>> RecognizeAsync(OcrEngine engine, IRandomAccessStream image, CancellationToken cancel)
     {
         var decoder = await BitmapDecoder.CreateAsync(image).AsTask(cancel);
@@ -124,7 +126,16 @@ public static class Importer
         using var bitmap = await decoder.GetSoftwareBitmapAsync(
             BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, transform,
             ExifOrientationMode.RespectExifOrientation, ColorManagementMode.DoNotColorManage).AsTask(cancel);
-        var result = await engine.RecognizeAsync(bitmap).AsTask(cancel);
-        return result.Lines.Select(l => l.Text).ToList();
+        // Windows OCR fails (an empty COM error) when two recognitions run at the same time: one at a time.
+        await OneRecognition.WaitAsync(cancel);
+        try
+        {
+            var result = await engine.RecognizeAsync(bitmap).AsTask(cancel);
+            return result.Lines.Select(l => l.Text).ToList();
+        }
+        finally
+        {
+            OneRecognition.Release();
+        }
     }
 }
