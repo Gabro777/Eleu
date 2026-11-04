@@ -8,7 +8,7 @@ public sealed record BrailleTable(string File, string Name);
 
 /// <summary>
 /// Translates text into 6-dot Braille with liblouis, the standard library also used by NVDA and JAWS, with the table
-/// chosen (Italian by default). Returns Unicode cells (U+2800âU+283F).
+/// chosen (Italian by default). Returns Unicode cells (U+2800–U+283F).
 /// </summary>
 public static class BrailleTranslator
 {
@@ -104,15 +104,18 @@ public static class BrailleTranslator
                 int outputLength = output.Length;
                 int outcome = lou_translateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl | NoUndefined);
-                if (outcome == 0)
+                // Very rarely liblouis fails the first time with a table it then translates with no trouble: one more
+                // try, then one more after dropping the tables it has loaded, so it reads them again from the files.
+                for (int attempt = 1; outcome == 0 && attempt <= 2; attempt++)
                 {
-                    // Very rarely liblouis fails once with a table it then translates with no trouble: one more try.
+                    if (attempt == 2)
+                        lou_free();
                     (inputLength, outputLength) = (input.Length, output.Length);
                     outcome = lou_translateString(path, input, ref inputLength, output, ref outputLength,
                         IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl | NoUndefined);
                 }
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non Ã¨ riuscito a tradurre il testo (tabella: {table}).");
+                    throw new InvalidOperationException($"liblouis non è riuscito a tradurre il testo (tabella: {table}).");
 
                 // If the output buffer was too small, liblouis stops before the end: retry with a bigger one.
                 if (inputLength >= input.Length)
@@ -129,7 +132,7 @@ public static class BrailleTranslator
         }
     }
 
-    /// <summary>Braille cells (U+2800âU+283F) back to text, with the current table: for BRF files to edit.</summary>
+    /// <summary>Braille cells (U+2800–U+283F) back to text, with the current table: for BRF files to edit.</summary>
     public static string BackTranslate(string cells) => BackTranslate(cells, Current);
 
     public static string BackTranslate(string cells, string table)
@@ -150,14 +153,16 @@ public static class BrailleTranslator
                 int outputLength = output.Length;
                 int outcome = lou_backTranslateString(path, input, ref inputLength, output, ref outputLength,
                     IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
-                if (outcome == 0)
+                for (int attempt = 1; outcome == 0 && attempt <= 2; attempt++)
                 {
+                    if (attempt == 2)
+                        lou_free();
                     (inputLength, outputLength) = (input.Length, output.Length);
                     outcome = lou_backTranslateString(path, input, ref inputLength, output, ref outputLength,
                         IntPtr.Zero, IntPtr.Zero, DotsIO | UcBrl);
                 }
                 if (outcome == 0)
-                    throw new InvalidOperationException($"liblouis non Ã¨ riuscito a leggere il Braille (tabella: {table}).");
+                    throw new InvalidOperationException($"liblouis non è riuscito a leggere il Braille (tabella: {table}).");
                 if (inputLength >= input.Length)
                     return Encoding.UTF32.GetString(MemoryMarshal.AsBytes(output.AsSpan(0, outputLength)));
                 if (capacity > input.Length * 64)
@@ -179,7 +184,7 @@ public static class BrailleTranslator
 
     /// <summary>
     /// liblouis opens the tables with the Windows ANSI encoding: if Eleu is in a folder with accented
-    /// letters (e.g. C:\Users\NiccolÃ²) the path would not be found. The 8.3 short path is always ASCII.
+    /// letters (e.g. C:\Users\Niccolò) the path would not be found. The 8.3 short path is always ASCII.
     /// </summary>
     private static string ShortPath(string path)
     {
@@ -193,6 +198,10 @@ public static class BrailleTranslator
     [DllImport("liblouis", CharSet = CharSet.Ansi)]
     private static extern int lou_translateString(string tables, uint[] input, ref int inputLength,
         [Out] uint[] output, ref int outputLength, IntPtr characterKind, IntPtr spacing, int mode);
+
+    /// <summary>Drops the tables liblouis has loaded: the next translation reads them again from the files.</summary>
+    [DllImport("liblouis")]
+    private static extern void lou_free();
 
     [DllImport("liblouis", CharSet = CharSet.Ansi)]
     private static extern int lou_backTranslateString(string tables, uint[] input, ref int inputLength,
