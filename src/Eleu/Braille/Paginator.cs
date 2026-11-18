@@ -164,7 +164,8 @@ public static class Paginator
             left = left[..Math.Max(0, space)];
         if (right.Length == 0)
             return left;
-        return left + new string(BrailleTranslator.EmptyCell, width - left.Length - right.Length) + right;
+        // With a margin that leaves less room than the number, the number still goes on the line, after one empty cell.
+        return left + new string(BrailleTranslator.EmptyCell, Math.Max(1, width - left.Length - right.Length)) + right;
     }
 
     /// <summary>A line of text, with the heading (if it is the start of a heading) and whether it must start a new page.</summary>

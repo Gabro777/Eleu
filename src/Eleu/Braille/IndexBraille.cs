@@ -4,7 +4,8 @@ using System.Text.RegularExpressions;
 namespace Eleu.Braille;
 
 /// <summary>
-/// Index Braille embossers (Basic-D, Everest-D, BrailleBox, FanFold) with the BRF file sent directly: before the text a
+/// Index Braille embossers (Basic-D, Everest-D, BrailleBox, FanFold), and the Enabling Technologies Juliet 120 and
+/// Romeo 60, built on the Index Basic-D V5, with the BRF file sent directly: before the text a
 /// line of the embosser's own commands sets cells per line, lines per page, single or double sided, copies and the
 /// Braille table, so the embosser follows what is chosen in Eleu instead of its own settings; after the text the end of
 /// document character (Ctrl+Z), without which the embosser can keep waiting for more and not start. The same commands
@@ -15,10 +16,10 @@ public static partial class IndexBraille
     /// <summary>The end of document character.</summary>
     public const byte EndOfDocument = 0x1A;
 
-    /// <summary>The printer's name says it is an Index Braille embosser.</summary>
+    /// <summary>The printer's name says it is an Index Braille embosser, or a Juliet 120 or Romeo 60.</summary>
     public static bool LooksLikeIndex(string printer) => IndexName().IsMatch(printer);
 
-    [GeneratedRegex(@"\bindex\b|everest|braille ?box|fan ?fold", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bindex\b|everest|braille ?box|fan ?fold|juliet ?-?120|romeo ?-?60", RegexOptions.IgnoreCase)]
     private static partial Regex IndexName();
 
     /// <summary>

@@ -34,7 +34,11 @@ public sealed class BrailleDialog : Form
     private const string ThroughDriver = "Tramite il driver di Windows (ViewPlus e simili)";
     private const string OtherPaper = "Altra misura";
     public const string GenericModel = "Generica: valgono le impostazioni della stampante";
-    public const string IndexModel = "Index Braille: Eleu imposta celle, righe, fronte e retro e copie";
+    public const string IndexModel = "Index Braille, anche Juliet 120 e Romeo 60: Eleu imposta celle, righe, fronte e retro, copie e tabella";
+    public const string EnablingModel = "Enabling Technologies precedenti (Juliet Pro, Romeo Pro, Trident, Thomas...): Eleu imposta celle, righe, fronte e retro e tabella";
+
+    /// <summary>The models in the window, in the order of <see cref="EmbosserModel"/>.</summary>
+    private static readonly string[] ModelItems = [GenericModel, IndexModel, EnablingModel];
 
     public const string EightDotHint = "Questo font sembra a 8 punti (\"computer\"): i punti 7 e 8 escono tra una riga e l'altra e la sua tabella non è quella dei file Braille. Scegli Braille29 o Braille36, senza sigla o con «US».";
     public const string OtherTableHint = "Questo font usa la tabella di un'altra lingua o di un altro programma (per esempio «IT» dopo il numero): lettere e numeri escono giusti, ma la punteggiatura e i simboli no. Scegli Braille29 o Braille36, senza sigla dopo il numero oppure con «US» (la tabella dei file Braille).";
@@ -98,17 +102,17 @@ public sealed class BrailleDialog : Form
         _delivery = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Tipo di invio" };
         _delivery.Items.AddRange([Direct, ThroughDriver]);
         _deliveryLabel = AddField(grid, "Tipo di in&vio:", _delivery);
-        // With the BRF sent directly: an Index embosser gets its settings from Eleu (see IndexBraille), the others keep
-        // their own. Guessed from the printer's name, remembered for each printer.
+        // With the BRF sent directly: Index and Enabling Technologies embossers get their settings from Eleu (see
+        // EmbosserModels), the others keep their own. Guessed from the printer's name, remembered for each printer.
         _models = new(delivery?.Models ?? new Dictionary<string, string>());
         _model = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Modello della stampante" };
-        _model.Items.AddRange([GenericModel, IndexModel]);
+        _model.Items.AddRange(ModelItems);
         // No access key: all the letters of the label are already taken in this window.
         _modelLabel = AddField(grid, "Modello della stampante:", _model);
         _model.SelectedIndexChanged += (_, _) =>
         {
-            if (Printer is string current && _model.SelectedItem is string model)
-                _models[current] = model == IndexModel ? "Index" : "Generica";
+            if (Printer is string current && _model.SelectedIndex >= 0)
+                _models[current] = EmbosserModels.Key((EmbosserModel)_model.SelectedIndex);
         };
         _font = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill, AccessibleName = "Font Braille del driver" };
         _font.Items.AddRange([.. delivery?.Fonts ?? []]);
@@ -303,8 +307,7 @@ public sealed class BrailleDialog : Form
     {
         bool printer = _deliveryVisible && Printer is not null;
         if (fromPrinter && Printer is string named)
-            _model.SelectedItem = _models.TryGetValue(named, out var model) ? (model == "Index" ? IndexModel : GenericModel)
-                : IndexBraille.LooksLikeIndex(named) ? IndexModel : GenericModel;
+            _model.SelectedIndex = (int)(_models.TryGetValue(named, out var model) ? EmbosserModels.FromKey(model) : EmbosserModels.Guess(named));
         if (fromPrinter && Printer is string name)
             _delivery.SelectedItem = _driverPrinters.Contains(name) ? ThroughDriver : Direct;
         else if (!fromPrinter && Printer is string chosen)
@@ -336,7 +339,7 @@ public sealed class BrailleDialog : Form
                 var (cells, lines) = DriverBraillePrinting.Capacity(DriverPaper, font, DriverLeftMargin, DriverTopMargin);
                 _paperFits.Text = $"Su questo foglio ci stanno al massimo {cells} celle per riga e {lines} righe per pagina.";
             }
-            catch (InvalidOperationException e)
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or System.Runtime.InteropServices.ExternalException)
             {
                 _paperFits.Text = e.Message;
             }
@@ -348,11 +351,16 @@ public sealed class BrailleDialog : Form
     /// <summary>The printers used through the driver, after the choices made here.</summary>
     public IReadOnlyCollection<string> DriverPrinters => _driverPrinters;
 
-    /// <summary>The model chosen for each printer ("Index" or "Generica"), after the choices made here.</summary>
+    /// <summary>The model chosen for each printer (see <see cref="EmbosserModels.Key"/>), after the choices made here.</summary>
     public IReadOnlyDictionary<string, string> Models => _models;
 
-    /// <summary>The BRF goes directly to an Index embosser, with its commands.</summary>
-    public bool IndexChosen => Printer is not null && !ThroughDriverChosen && _model.SelectedItem as string == IndexModel;
+    /// <summary>What goes with the BRF sent directly: Generic through the driver or to a file.</summary>
+    public EmbosserModel ModelChosen => Printer is not null && !ThroughDriverChosen && _model.SelectedIndex >= 0
+        ? (EmbosserModel)_model.SelectedIndex
+        : EmbosserModel.Generic;
+
+    /// <summary>The BRF goes directly to an Index embosser (or a Juliet 120), with its commands.</summary>
+    public bool IndexChosen => ModelChosen == EmbosserModel.Index;
 
     /// <summary>How many copies to print.</summary>
     public int Copies => (int)_copies.Value;
@@ -369,7 +377,7 @@ public sealed record BrailleDelivery(IReadOnlyCollection<string> DriverPrinters,
 
     public float TopMargin { get; init; } = DriverBraillePrinting.MarginInches;
 
-    /// <summary>The model of each printer chosen before ("Index" or "Generica"); the others are guessed from the name.</summary>
+    /// <summary>The model of each printer chosen before (see <see cref="EmbosserModels.Key"/>); the others are guessed from the name.</summary>
     public IReadOnlyDictionary<string, string>? Models { get; init; }
 
     /// <summary>Copies chosen last time.</summary>

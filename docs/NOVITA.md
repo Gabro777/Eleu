@@ -1,11 +1,11 @@
-# Eleu 1.5.2
+# Eleu 1.5.3
 
 Eleu è un programma di scrittura per Windows pensato per persone cieche e ipovedenti: tutto dalla tastiera, con lo
 screen reader (NVDA, JAWS, Assistente vocale), con il Braille e con la voce. Gratuito e libero, con licenza GNU GPL 3.
 
 ## Installazione
 
-Scarica `Eleu.msi` (oppure `Eleu-1.5.2.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
+Scarica `Eleu.msi` (oppure `Eleu-1.5.3.msi`, è lo stesso file) e aprilo: Eleu si installa per il tuo utente, senza
 permessi di amministratore e senza dover installare altro. Se c'è già una versione precedente, viene aggiornata.
 Nella guida (F1) ci sono tutti i comandi.
 
@@ -30,6 +30,19 @@ per la voce, almeno una voce di Windows.
 
 ## Novità di questa versione
 
+- **Enabling Technologies Juliet 120 e Romeo 60**: sono costruite sulle Index, quindi con l'invio diretto si sceglie
+  il modello «Index Braille» (Eleu lo propone da solo se il nome della stampante lo fa capire). Eleu imposta anche la
+  tabella dei caratteri: lettere accentate, maiuscole e punteggiatura escono giuste.
+- **Enabling Technologies precedenti** (Juliet Pro e Classic, Romeo Pro e Attaché, Trident, Thomas, ET, BookMaker,
+  Braille Express, Marathon): nuovo modello in «Modello della stampante», con cui Eleu imposta celle per riga, righe per
+  pagina, fronte e retro e tabella.
+- **Niente più «Si è verificata un'eccezione non gestita»**: se una stampa Braille non riesce, Eleu dice perché e
+  cosa controllare; se capita un errore imprevisto, Eleu lo dice, resta aperto e propone di mettere sul desktop un file
+  con i dettagli. Aiuto, Resoconto per l'assistenza sul desktop mette sul desktop il resoconto dell'ultimo errore e
+  quello dell'ultima stampa Braille tramite il driver, da mandare a chi ti aiuta.
+
+Dalla versione 1.5.0:
+
 - **Stampanti Index Braille** (Basic, Everest, BrailleBox, FanFold): con l'invio diretto, in «Modello della stampante»
   si sceglie «Index Braille» (Eleu lo propone da solo se il nome della stampante lo fa capire). Eleu manda alla
   stampante i comandi che impostano celle per riga, righe per pagina, fronte e retro, copie e tabella, quindi valgono
@@ -43,7 +56,7 @@ per la voce, almeno una voce di Windows.
   con margini 25,4 e 12,7); il retro del foglio usa lo stesso margine sinistro; ogni cella è stampata nella sua colonna
   esatta, così il numero di pagina arriva alla fine della riga; il foglio su misura viene chiesto alla stampante nel
   modo standard di Windows.
-- **Resoconto della stampa Braille** (Aiuto, Resoconto della stampa Braille sul desktop): se una stampa tramite driver
+- **Resoconto della stampa Braille** (Aiuto, Resoconto per l'assistenza sul desktop): se una stampa tramite driver
   esce spostata, mette sul desktop un file con quello che la stampante ha davvero usato, da mandare a chi ti aiuta.
 
 Dalla versione 1.4.4:
@@ -83,13 +96,13 @@ telefono, grafici in rilievo dalle tabelle, apertura dei file BRF, parola eviden
 
 - **Stampanti Braille**: con l'invio diretto e il modello «Generica» valgono le impostazioni della stampante. Righe per
   pagina, celle per riga, fronte e retro e tabella dei caratteri vanno impostati sulla stampante e devono corrispondere a
-  quelli scelti in Eleu (con le Index, invece, li imposta Eleu).
+  quelli scelti in Eleu (con le Index, la Juliet 120 e le Enabling Technologies, invece, li imposta Eleu).
   Per la tabella va scelta quella nordamericana (US, North American, MIT): è lo standard dei file BRF. La pagina di
   prova aiuta a trovare i valori giusti.
 - Con l'invio tramite il driver di Windows scegli la misura vera del foglio e stampa prima la pagina di prova: se qualcosa
   non torna, segnalalo indicando il modello e allegando il resoconto della stampa (menu Aiuto).
-- Il supporto per le Index è nuovo e va ancora provato su più modelli: se qualcosa non va, segnalalo indicando il
-  modello.
+- Il supporto per le Index, la Juliet 120 e le Enabling Technologies è nuovo e va ancora provato su più modelli: se
+  qualcosa non va, segnalalo indicando il modello e allegando il resoconto per l'assistenza (menu Aiuto).
 - Per le foto dal telefono, la prima volta Windows chiede se Eleu può usare la rete: scegli Consenti. Se Windows
   considera pubblica la rete di casa, il telefono viene bloccato: la finestra di Eleu lo avvisa e spiega come
   impostare la rete come privata.

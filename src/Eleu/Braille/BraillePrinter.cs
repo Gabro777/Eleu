@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 
@@ -9,22 +10,55 @@ namespace Eleu.Braille;
 /// </summary>
 public static class BraillePrinter
 {
-    public static IReadOnlyList<string> Installed() => PrinterSettings.InstalledPrinters.Cast<string>().ToList();
+    /// <summary>The printers installed in Windows; none if Windows cannot list them (the print spooler is stopped).</summary>
+    public static IReadOnlyList<string> Installed()
+    {
+        try
+        {
+            return PrinterSettings.InstalledPrinters.Cast<string>().ToList();
+        }
+        catch (Win32Exception)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// The errors printing can end with: the printer, its driver or Windows refusing the job, a sheet or a setting the
+    /// driver does not accept, a printer removed meanwhile. They become a message, not an unexpected error.
+    /// </summary>
+    public static bool IsPrintFailure(Exception e) =>
+        e is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or NotSupportedException
+            or InvalidPrinterException or ExternalException or DllNotFoundException or EntryPointNotFoundException;
+
+    /// <summary>The message for a failed print: what failed and why, in words, with Windows' own reason when there is one.</summary>
+    public static string FailureMessage(string what, Exception e) =>
+        $"{what}\n\n{e.Message}\n\n" +
+        "Controlla che la stampante sia accesa, collegata e senza fogli inceppati, e che in «Tipo di invio» e «Modello della stampante» ci sia la scelta giusta.\n\n" +
+        "Se non si risolve, Aiuto, Resoconto per l'assistenza sul desktop mette sul desktop i dettagli dell'errore, da mandare a chi ti aiuta.";
+
+    /// <summary>The message with Windows' reason for the last error of a printing function.</summary>
+    private static IOException Failure(string message)
+    {
+        int code = Marshal.GetLastWin32Error();
+        return new IOException(code == 0 ? message : $"{message} {new Win32Exception(code).Message} (codice {code})", code);
+    }
 
     public static void Print(string printer, byte[] data, string documentName)
     {
         if (!OpenPrinter(printer, out var handle, IntPtr.Zero))
-            throw new IOException($"Impossibile aprire la stampante {printer}.", Marshal.GetLastWin32Error());
+            throw Failure($"Impossibile aprire la stampante {printer}.");
         try
         {
             var documents = new DocInfo1 { DocumentName = documentName, DataType = "RAW" };
             if (StartDocPrinter(handle, 1, ref documents) == 0)
-                throw new IOException($"La stampante {printer} non accetta il documento.", Marshal.GetLastWin32Error());
+                throw Failure($"La stampante {printer} non accetta il documento.");
             try
             {
-                StartPagePrinter(handle);
+                if (!StartPagePrinter(handle))
+                    throw Failure($"La stampante {printer} non accetta il documento.");
                 if (!WritePrinter(handle, data, data.Length, out int written) || written != data.Length)
-                    throw new IOException($"Invio alla stampante {printer} non riuscito.", Marshal.GetLastWin32Error());
+                    throw Failure($"Invio alla stampante {printer} non riuscito.");
                 EndPagePrinter(handle);
             }
             finally

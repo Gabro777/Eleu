@@ -6,6 +6,15 @@ static class Program
     static void Main(string[] arguments)
     {
         ApplicationConfiguration.Initialize();
+        // An unexpected error says what happened in Italian and keeps a report the user can send, instead of the
+        // Windows Forms window with "Continua / Esci"; one on another thread can only be written down before Eleu closes.
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) => ErrorReport.ShowUnexpected(e.Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            if (e.ExceptionObject is Exception error)
+                ErrorReport.Save(error, "Errore fuori dalla finestra principale");
+        };
         Application.Run(new EleuContext(arguments.FirstOrDefault()));
     }
 }

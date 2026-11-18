@@ -15,26 +15,43 @@ public sealed partial class MainWindow
     private string? _lastTranslatedLine;
 
     /// <summary>
-    /// Aiuto > Resoconto della stampa Braille sul desktop: the report of the last print through the driver, copied to
-    /// the desktop with a clear name, so it can be attached to a message without looking for hidden folders.
+    /// Aiuto > Resoconto per l'assistenza sul desktop: the report of the last print through the driver and the one of
+    /// the last error, copied to the desktop with clear names, so they can be attached to a message without looking
+    /// for hidden folders.
     /// </summary>
-    private void CopyPrintReportToDesktop()
+    private void CopySupportReportsToDesktop()
     {
-        if (!File.Exists(PrintReport.FilePath))
-        {
-            ShowMessage("Non c'è ancora un resoconto: stampa prima in Braille tramite il driver di Windows (per esempio la pagina di prova).");
-            return;
-        }
-        const string name = "Eleu - resoconto stampa Braille.txt";
+        const string printName = "Eleu - resoconto stampa Braille.txt";
+        var copied = new List<string>();
         try
         {
-            File.Copy(PrintReport.FilePath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), name), overwrite: true);
-            ShowMessage($"Il resoconto dell'ultima stampa Braille è sul desktop: «{name}».");
+            if (File.Exists(PrintReport.FilePath))
+            {
+                File.Copy(PrintReport.FilePath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), printName), overwrite: true);
+                copied.Add(printName);
+            }
+            if (ErrorReport.CopyToDesktop())
+                copied.Add(ErrorReport.DesktopName);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             MessageBox.Show(this, $"Impossibile copiare il resoconto sul desktop.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
         }
+        ShowMessage(copied.Count switch
+        {
+            0 => "Non c'è ancora nessun resoconto: Eleu ne scrive uno quando stampa in Braille tramite il driver di Windows e quando qualcosa va storto.",
+            1 => $"Il resoconto è sul desktop: «{copied[0]}».",
+            _ => $"I resoconti sono sul desktop: «{copied[0]}» e «{copied[1]}».",
+        });
+    }
+
+    /// <summary>A print that failed: the details kept for the report, and a message that says what to check.</summary>
+    private void ShowPrintFailure(string what, string printer, BrailleDialog window, Exception e)
+    {
+        ErrorReport.Save(e, $"{what} Stampante: {printer}; invio: {(window.ThroughDriverChosen ? "tramite il driver" : "diretto")}; " +
+            $"modello: {EmbosserModels.Key(window.ModelChosen)}; font: {window.DriverFont ?? "nessuno"}");
+        MessageBox.Show(this, BraillePrinter.FailureMessage(what, e), AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
     /// <summary>The Braille table for all of Eleu: saved, and the Braille line shown again with it.</summary>
@@ -169,7 +186,7 @@ public sealed partial class MainWindow
         }
         var heading = BrailleTitle();
         using var window = new BrailleDialog(printers, _settings.BraillePrinter, BrailleFormat with { Title = _settings.BrailleHeading ? heading : null },
-            format => Paginate(ParagraphsWith(format.Table), format).Count,
+            format => CountPages(ParagraphsWith(format.Table), format),
             toFile ? "Salva come Braille (BRF)" : "Stampa braille", withFile: toFile, headingInCells: heading,
             printTestPage: toFile ? null : PrintBrailleTestPage,
             delivery: toFile ? null : new BrailleDelivery(_settings.BrailleDriverPrinters, DriverBraillePrinting.BrailleFonts(), _settings.BrailleDriverFont,
@@ -210,14 +227,25 @@ public sealed partial class MainWindow
             // The table chosen here becomes Eleu's table: the Braille line, the check and 6-key typing use it too.
             UseBrailleTable(chosen.Table);
             if (chosen.Title is not null)
-                chosen = chosen with { Title = BrailleTranslator.Translate(DocumentTitle, chosen.Table) };
+                chosen = chosen with { Title = BrailleTitle(chosen.Table) };
         }
         _settings.Save();
 
-        var all = Paginate(ParagraphsWith(chosen.Table), chosen);
+        List<List<string>> all;
+        int wholeInTheWindow;
+        try
+        {
+            all = Paginate(ParagraphsWith(chosen.Table), chosen);
+            wholeInTheWindow = chosen == window.Format ? all.Count : Paginate(ParagraphsWith(window.Format.Table), window.Format).Count;
+        }
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException or InvalidOperationException)
+        {
+            MessageBox.Show(this, $"La traduzione in Braille non è disponibile.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
         var (from, to) = window.Range;
         // Fewer lines per page make more pages: the whole document stays the whole document.
-        if (chosen != window.Format && from == 1 && to >= Paginate(ParagraphsWith(window.Format.Table), window.Format).Count)
+        if (chosen != window.Format && from == 1 && to >= wholeInTheWindow)
             to = all.Count;
         var pages = all.Skip(from - 1).Take(to - from + 1).ToList();
         var data = BrfFormat.Byte(pages);
@@ -231,10 +259,9 @@ public sealed partial class MainWindow
                 SendToBraillePrinter(window, printer, pages, chosen, DocumentName, window.Copies);
                 done = $"Inviate {howManyPages} Braille a {printer}";
             }
-            catch (Exception e) when (e is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
+            catch (Exception e) when (BraillePrinter.IsPrintFailure(e))
             {
-                MessageBox.Show(this, $"{e.Message}\n\nControlla che la stampante sia accesa e collegata.", AppName,
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowPrintFailure($"Impossibile stampare in Braille su {printer}.", printer, window, e);
                 return;
             }
         }
@@ -318,9 +345,9 @@ public sealed partial class MainWindow
             SendToBraillePrinter(window, printer, TestPage.Pages(format, text => BrailleTranslator.Translate(text, format.Table)), format, "Eleu - pagina di prova", copies: 1);
             _announcer.Announce($"Pagina di prova inviata a {printer}");
         }
-        catch (Exception e) when (e is IOException or InvalidOperationException or DllNotFoundException or System.ComponentModel.Win32Exception)
+        catch (Exception e) when (BraillePrinter.IsPrintFailure(e))
         {
-            MessageBox.Show(this, $"Impossibile stampare la pagina di prova.\n\n{e.Message}", AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ShowPrintFailure($"Impossibile stampare la pagina di prova su {printer}.", printer, window, e);
         }
     }
 
@@ -345,7 +372,7 @@ public sealed partial class MainWindow
         {
             (cells, lines) = DriverBraillePrinting.Capacity(paper, font, window.DriverLeftMargin, window.DriverTopMargin);
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException)
+        catch (Exception e) when (BraillePrinter.IsPrintFailure(e))
         {
             MessageBox.Show(this, e.Message, AppName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return null;
@@ -372,11 +399,9 @@ public sealed partial class MainWindow
     {
         if (!window.ThroughDriverChosen)
         {
-            // An Index embosser gets its settings and the copies with the commands; the others the copies one after the other.
-            var data = window.IndexChosen
-                ? IndexBraille.Job(BrfFormat.Byte(pages), format, copies)
-                : BrfFormat.Copies(pages, copies, format.DoubleSided);
-            BraillePrinter.Print(printer, data, name);
+            // Index and Enabling Technologies embossers get their settings with their commands; the copies go with the
+            // commands to Index ones, one after the other to the others.
+            BraillePrinter.Print(printer, EmbosserModels.Job(window.ModelChosen, pages, format, copies), name);
             return;
         }
         if (window.DriverFont is not string font)
@@ -390,11 +415,25 @@ public sealed partial class MainWindow
     private static List<List<string>> Paginate(List<BrailleParagraph> paragraphs, PageFormat format) =>
         Paginator.Paginate(paragraphs, format, text => BrailleTranslator.Translate(text, format.Table));
 
-    private string? BrailleTitle()
+    /// <summary>The pages the document takes, for the window; 0 if the translation fails (the window must still open).</summary>
+    private static int CountPages(List<BrailleParagraph> paragraphs, PageFormat format)
     {
         try
         {
-            return BrailleTranslator.Translate(DocumentTitle);
+            return Paginate(paragraphs, format).Count;
+        }
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException or InvalidOperationException)
+        {
+            return 0;
+        }
+    }
+
+    /// <param name="table">The liblouis table; null = the current one.</param>
+    private string? BrailleTitle(string? table = null)
+    {
+        try
+        {
+            return BrailleTranslator.Translate(DocumentTitle, table ?? BrailleTranslator.Current);
         }
         catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException or InvalidOperationException)
         {
